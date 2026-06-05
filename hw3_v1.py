@@ -1,103 +1,179 @@
 import random
 import threading
 import time
-import os
-
-# 全局延遲設定（秒），用來調整動畫速度
-DELAY = 0.01
+import tkinter as tk
 
 # ==========================================
 # 1. 選擇排序法 (Selection Sort)
 # ==========================================
 def selection_sort(arr, viz_callback):
-    """
-    對齊簡報：雙層 for 迴圈，反覆從未排序區找最小值與左邊交換
-    """
     n = len(arr)
-    # i 從 0 到 n-1 (all elements)
-    for i in range(n):  # [cite: 737]
+    for i in range(n):  # for (i in all elements of array) [cite: 2306]
         smallest_idx = i
-        # j 從 i+1 到最後一個元素
-        for j in range(i + 1, n):  # [cite: 738]
-            if arr[j] < arr[smallest_idx]:
+        for j in range(i + 1, n):  # for (j in i+1 to the last element of array) [cite: 2307]
+            if arr[j] < arr[smallest_idx]:  # find smallest values [cite: 2307]
                 smallest_idx = j
-            # 每一次比對都可以觸發視覺化回傳
             viz_callback(arr, current=j, target=smallest_idx)
-            time.sleep(DELAY)
-            
-        # 將最小值與第 i 個數值交換
-        arr[i], arr[smallest_idx] = arr[smallest_idx], arr[i]  # [cite: 738]
+            time.sleep(0.01)
+        arr[i], arr[smallest_idx] = arr[smallest_idx], arr[i]  # swap [cite: 2307]
         viz_callback(arr, current=i, target=smallest_idx)
-        time.sleep(DELAY)
-    return arr
+        time.sleep(0.01)
+    viz_callback(arr, done=True)
 
 # ==========================================
 # 2. 泡泡排序法 (Bubble Sort)
 # ==========================================
 def bubble_sort(arr, viz_callback):
-    """
-    對齊簡報：i 從 n 遞減到 1，j 從 0 到 i-1，兩兩比較把最大值擠到後面
-    """
     n = len(arr)
-    # i from n to 1
-    for i in range(n, 0, -1):  # [cite: 999]
-        # j in 0 to i-1
-        for j in range(0, i - 1):  # [cite: 1001]
-            if arr[j] > arr[j + 1]:  # [cite: 1002]
-                arr[j], arr[j + 1] = arr[j + 1], arr[j]  # [cite: 1003]
-            # 實時觸發視覺化
+    for i in range(n, 0, -1):  # for (i from n to 1) [cite: 2568]
+        for j in range(0, i - 1):  # for (j in 0 to i-1) (修正邊界符合簡報概念) [cite: 2570]
+            if arr[j] > arr[j + 1]:  # if (array[j] > array[j+1]) (改為相鄰比較) [cite: 2571]
+                arr[j], arr[j + 1] = arr[j + 1], arr[j]  # swap [cite: 2572]
             viz_callback(arr, current=j, target=j+1)
-            time.sleep(DELAY)
-    return arr
+            time.sleep(0.01)
+    viz_callback(arr, done=True)
 
 # ==========================================
 # 3. 快速排序法 (Quick Sort) - 嚴格對齊簡報雙指標法
 # ==========================================
 def quick_sort_wrapper(arr, viz_callback):
-    """
-    包裝函式，用來啟動遞迴
-    """
     _quick_sort(arr, 0, len(arr) - 1, viz_callback)
-    return arr
+    viz_callback(arr, done=True)
 
 def _quick_sort(arr, start, end, viz_callback):
-    """
-    對齊簡報：選第一個元素為 pivot，left/right 指標向中間靠攏
-    """
-    # 終止條件：子陣列長度小於等於 1
-    if start >= end:  # [cite: 1403, 1406]
+    if start >= end:  # if (array length <= 1) 終止條件 [cite: 2972]
         return
         
-    pivot = start  # 將陣列最開始元素當成基準點 [cite: 1060, 1407]
-    left = start   # [cite: 1408]
-    right = end    # [cite: 1409]
+    pivot = start  # 將陣列最開始元素當成基準點 [cite: 2629, 2976]
+    left = start   # left = start [cite: 2977]
+    right = end    # right = end [cite: 2978]
     
-    # while (left != right)
-    while left < right:  # [cite: 1410]
-        # 往左移動右指標，直到碰到小於基準點者
-        while left < right and arr[right] >= arr[pivot]:  # [cite: 1210, 1411]
+    while left < right:  # while (left != right) [cite: 2979]
+        # decrease right until (array[right] < array[pivot]) [cite: 2980]
+        while left < right and arr[right] >= arr[pivot]:
             right -= 1
             viz_callback(arr, current=right, target=pivot)
-            time.sleep(DELAY)
+            time.sleep(0.01)
             
-        # 往右移動左指標，直到碰到大於基準點者
-        while left < right and arr[left] <= arr[pivot]:  # [cite: 1212, 1411]
+        # increase left until (array[left] > array[pivot]) [cite: 2980]
+        while left < right and arr[left] <= arr[pivot]:
             left += 1
             viz_callback(arr, current=left, target=pivot)
-            time.sleep(DELAY)
+            time.sleep(0.01)
             
-        # 交換左指標和右指標內容
-        if left < right:  # [cite: 1182, 1235]
-            arr[left], arr[right] = arr[right], arr[left]  # [cite: 1411]
+        if left < right:
+            arr[left], arr[right] = arr[right], arr[left]  # swap(array[left], array[right]) [cite: 2980]
             viz_callback(arr, current=left, target=right)
-            time.sleep(DELAY)
+            time.sleep(0.01)
             
-    # 移動到左右指標碰在一起，此時終止，交換基準點與相撞處的值
-    arr[pivot], arr[right] = arr[right], arr[pivot]  # [cite: 1280, 1306, 1412]
+    arr[pivot], arr[right] = arr[right], arr[pivot]  # swap(array[pivot], array[right]) [cite: 2981]
     viz_callback(arr, current=right, target=pivot)
-    time.sleep(DELAY)
+    time.sleep(0.01)
     
-    # 遞迴跑左右兩邊的子陣列
-    _quick_sort(arr, start, right - 1, viz_callback)  # [cite: 1388, 1412]
-    _quick_sort(arr, right + 1, end, viz_callback)    # [cite: 1388, 1412]
-print()
+    _quick_sort(arr, start, right - 1, viz_callback)  # QuickSort(array, start, pivot - 1) [cite: 2981]
+    _quick_sort(arr, right + 1, end, viz_callback)    # QuickSort(array, pivot + 1, end) [cite: 2981]
+
+
+# ==========================================
+# Tkinter GUI 視覺化介面
+# ==========================================
+class SortingVisualizer:
+    def __init__(self, root, data_size=30):
+        self.root = root
+        self.root.title("演算法效能比較 (Selection vs Bubble vs Quick)")
+        
+        self.data_size = data_size
+        # 產出包含 N 個隨機不重覆數字
+        self.original_data = list(range(10, 10 + data_size * 5, 5))
+        random.shuffle(self.original_data)
+        
+        # 複製三份給不同的演算法
+        self.data_selection = list(self.original_data)
+        self.data_bubble = list(self.original_data)
+        self.data_quick = list(self.original_data)
+        
+        # 建立三個畫布
+        self.canvas_width = 250
+        self.canvas_height = 200
+        
+        self.create_canvas_section("Selection Sort", 0)
+        self.create_canvas_section("Bubble Sort", 1)
+        self.create_canvas_section("Quick Sort (雙指標)", 2)
+        
+        # 開始按鈕
+        self.btn_start = tk.Button(root, text="開始同步排序 (Multi-threading)", command=self.start_sorting, font=("Arial", 12))
+        self.btn_start.pack(pady=10)
+
+    def create_canvas_section(self, title, col):
+        frame = tk.LabelFrame(self.root, text=title, font=("Arial", 10, "bold"))
+        frame.pack(side=tk.LEFT, padx=10, pady=10)
+        
+        canvas = tk.Canvas(frame, width=self.canvas_width, height=self.canvas_height, bg="white")
+        canvas.pack()
+        
+        time_label = tk.Label(frame, text="時間: 0.000s", font=("Arial", 10))
+        time_label.pack(pady=2)
+        
+        if col == 0:
+            self.canvas_sel, self.lbl_sel = canvas, time_label
+            self.draw_data(self.canvas_sel, self.data_selection)
+        elif col == 1:
+            self.canvas_bub, self.lbl_bub = canvas, time_label
+            self.draw_data(self.canvas_bub, self.data_bubble)
+        pass
+            self.canvas_qck, self.lbl_qck = canvas, time_label
+            self.draw_data(self.canvas_qck, self.data_quick)
+
+    def draw_data(self, canvas, arr, current=-1, target=-1, done=False):
+        canvas.delete("all")
+        bar_width = self.canvas_width / self.data_size
+        max_val = max(self.original_data)
+        
+        for i, val in enumerate(arr):
+            # 計算長條圖高度
+            bar_height = (val / max_val) * (self.canvas_height - 20)
+            x0 = i * bar_width
+            y0 = self.canvas_height - bar_height
+            x1 = (i + 1) * bar_width
+            y1 = self.canvas_height
+            
+            # 定義顏色：完成為綠色，當前指標為紅色/黃色，其餘為藍色
+            if done:
+                color = "#2ecc71"
+            elif i == current:
+                color = "#e74c3c"
+            elif i == target:
+                color = "#f1c40f"
+            else:
+                color = "#3498db"
+                
+            canvas.create_rectangle(x0, y0, x1, y1, fill=color, outline="")
+
+    def start_sorting(self):
+        self.btn_start.config(state=tk.DISABLED)
+        
+        # 建立三個 Thread 獨立跑排序 [cite: 1611, 2584]
+        t1 = threading.Thread(target=selection_sort, args=(self.data_selection, self.get_callback(self.canvas_sel, self.lbl_sel)))
+        t2 = threading.Thread(target=bubble_sort, args=(self.data_bubble, self.get_callback(self.canvas_bub, self.lbl_bub)))
+        t3 = threading.Thread(target=quick_sort_wrapper, args=(self.data_quick, self.get_callback(self.canvas_qck, self.lbl_qck)))
+        
+        t1.start()
+        t2.start()
+        t3.start()
+
+    def get_callback(self, canvas, label):
+        start_time = time.time()
+        def callback(arr, current=-1, target=-1, done=False):
+            elapsed = time.time() - start_time
+            # 使用 root.after 確保安全在主線程更新 UI
+            self.root.after(0, lambda: self.update_ui(canvas, label, arr, current, target, elapsed, done))
+        return callback
+
+    def update_ui(self, canvas, label, arr, current, target, elapsed, done):
+        self.draw_data(canvas, arr, current, target, done)
+        label.config(text=f"時間: {elapsed:.3f}s")
+
+if __name__ == "__main__":
+    window = tk.Tk()
+    app = SortingVisualizer(window, data_size=40)
+    window.mainloop()
