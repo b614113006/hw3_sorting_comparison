@@ -150,4 +150,27 @@ class SortingVisualizer:
     def start_sorting(self):
         self.btn_start.config(state=tk.DISABLED)
         
-        t1 = threading.Thread(target=selection_sort, args=(self.data_selection, self.get_
+        # 建立三個 Thread 獨立跑排序
+        t1 = threading.Thread(target=selection_sort, args=(self.data_selection, self.get_callback(self.canvas_sel, self.lbl_sel)))
+        t2 = threading.Thread(target=bubble_sort, args=(self.data_bubble, self.get_callback(self.canvas_bub, self.lbl_bub)))
+        t3 = threading.Thread(target=quick_sort_wrapper, args=(self.data_quick, self.get_callback(self.canvas_qck, self.lbl_qck)))
+        
+        t1.start()
+        t2.start()
+        t3.start()
+
+    def get_callback(self, canvas, label):
+        start_time = time.time()
+        def callback(arr, current=-1, target=-1, done=False):
+            elapsed = time.time() - start_time
+            self.root.after(0, lambda: self.update_ui(canvas, label, arr, current, target, elapsed, done))
+        return callback
+
+    def update_ui(self, canvas, label, arr, current, target, elapsed, done):
+        self.draw_data(canvas, arr, current, target, done)
+        label.config(text=f"時間: {elapsed:.3f}s")
+
+if __name__ == "__main__":
+    window = tk.Tk()
+    app = SortingVisualizer(window, data_size=40)
+    window.mainloop()
