@@ -5,7 +5,7 @@ import tkinter as tk
 from tkinter import ttk
 
 # ==========================================
-# 1. 自訂排序演算法 (統一公平的動畫流速延遲基準)
+# 1. 自訂排序演算法 (精準時間流速控制，拒絕發抖)
 # ==========================================
 
 def selection_sort(arr, progress_dict):
@@ -21,7 +21,7 @@ def selection_sort(arr, progress_dict):
                 min_idx = j
         data_list[i], data_list[min_idx] = data_list[min_idx], data_list[i]
         
-        # 穩定維持在每排好一個數字，就更新進度並公平延遲 0.01 秒
+        # 穩定在 2.1 秒左右走完
         progress_dict['Selection'] = ((i + 1) / n) * 100
         time.sleep(0.01)
 
@@ -36,13 +36,13 @@ def bubble_sort(arr, progress_dict):
             if data_list[j] > data_list[j + 1]:
                 data_list[j], data_list[j + 1] = data_list[j + 1], data_list[j]
         
-        # 穩定維持在每擠完一個最大值，就更新進度並公平延遲 0.01 秒
+        # 穩定在 2.1 秒左右走完 (與 Selection 同步)
         progress_dict['Bubble'] = ((n - i + 1) / (n - 1)) * 100
         time.sleep(0.01)
 
-def quick_sort_recursive(data_list, start, end, total_len, progress_dict):
+def quick_sort_recursive(data_list, start, end, total_len, progress_dict, depth=0):
     """
-    快速排序法核心遞迴：雙指標朝中間移動（嚴格遵循投影片第12頁虛擬碼邏輯）
+    快速排序法核心遞迴：引入 depth 參數控制延遲，徹底根除 1.4秒累積與發抖 Bug
     """
     if start >= end:
         return
@@ -56,37 +56,39 @@ def quick_sort_recursive(data_list, start, end, total_len, progress_dict):
             left += 1
         if left < right:
             data_list[left], data_list[right] = data_list[right], data_list[left]
-            
-    # 左右指標相撞，將基準點百正交換
     data_list[pivot], data_list[right] = data_list[right], data_list[pivot]
     
-    # 【最科學的更改處】在此時（基準點成功定位時），計算當前進度
     current_sorted = total_len - (end - start)
-    progress_dict['Quick'] = min(99.0, (current_sorted / total_len) * 100)
+    current_pct = min(99.0, (current_sorted / total_len) * 100)
     
-    # 引入與 Selection、Bubble 完全相同的 0.01 秒公平延遲基準
-    # 這樣既有煞車控制，又絕對不會在深層遞迴中產生多重疊加發抖 Bug！
-    time.sleep(0.01)
-    
-    # 遞迴處理左右子陣列
-    quick_sort_recursive(data_list, start, right - 1, total_len, progress_dict)
-    quick_sort_recursive(data_list, right + 1, end, total_len, progress_dict)
+    # 【關鍵機制】只有在前幾層主幹切分時才踩煞車，避免深層遞迴數百次 sleep 疊加導致發抖與卡頓
+    if depth < 4:
+        progress_dict['Quick'] = current_pct
+        time.sleep(0.03)  # 給予適當延遲以供多執行緒視覺化同步起跑觀察
+    else:
+        # 深層遞迴時，只在進度高於當前畫面上顯示的值時才推進，防止數字上下來回發抖
+        if current_pct > progress_dict['Quick']:
+            progress_dict['Quick'] = current_pct
+            
+    # 遞迴呼叫時，層數（depth）加 1
+    quick_sort_recursive(data_list, start, right - 1, total_len, progress_dict, depth + 1)
+    quick_sort_recursive(data_list, right + 1, end, total_len, progress_dict, depth + 1)
 
 def run_quick_sort(arr, progress_dict):
     """快速排序法執行緒入口"""
     data_list = list(arr)
     n = len(data_list)
-    quick_sort_recursive(data_list, 0, n - 1, n, progress_dict)
-    progress_dict['Quick'] = 100.0  # 完成時完美充滿 100%
+    quick_sort_recursive(data_list, 0, n - 1, n, progress_dict, depth=0)
+    progress_dict['Quick'] = 100.0  # 順暢定格在 100%
 
 # ==========================================
-# 2. 全域視窗與現代化視覺化 (Tkinter 穩定架構)
+# 2. 全域視窗與現代化視覺化 (Tkinter 與 圓角樣式)
 # ==========================================
 
 root = tk.Tk()
 root.title("Sorting Algorithm Efficiency Comparison (Threaded)")
 root.geometry("640x480")
-root.configure(bg='#e9ebe0')  # 柔和現代質感米灰色背景
+root.configure(bg='#e9ebe0')  # 柔和質感米灰色背景
 root.resizable(False, False)
 
 # 共享即時資料結構
@@ -94,20 +96,17 @@ progress = {'Selection': 0.0, 'Bubble': 0.0, 'Quick': 0.0}
 runtimes = {'Selection': 0.0, 'Bubble': 0.0, 'Quick': 0.0}
 status_vars = {"is_running": False}
 
-# 設置 ttk 圓角進度條與青藍色風格
+# 設置 ttk 圓角青藍色樣式风格
 style = ttk.Style()
 style.theme_use('clam')
 style.configure("Teal.Horizontal.TProgressbar", troughcolor='#cccccc', background='#218c9f', thickness=22, borderwidth=0)
 
-# 頂部大標題
 title_label = tk.Label(root, text="Sorting Algorithms Efficiency", font=('Segoe UI', 18), bg='#e9ebe0', fg='#202020')
 title_label.pack(pady=(25, 15))
 
-# 主面板框架 (排版靠左對齊，絕不遮擋字體)
 main_frame = tk.Frame(root, bg='#e9ebe0')
 main_frame.pack(fill=tk.X, padx=40)
 
-# 建立進度條元件
 algos = [('Selection Sort', 'Selection'), ('Bubble Sort', 'Bubble'), ('Quick Sort', 'Quick')]
 bars = {}
 percent_labels = {}
@@ -130,11 +129,9 @@ for name, key in algos:
     pct_lbl.pack(side=tk.LEFT)
     percent_labels[key] = pct_lbl
 
-# 狀態標籤 (Ready / Running...)
 status_label = tk.Label(root, text="Ready", font=('Segoe UI', 12), bg='#e9ebe0', fg='#444444')
 status_label.pack(anchor='w', padx=40, pady=(15, 10))
 
-# 底部統計面板大標題
 time_heading = tk.Label(root, text="Total runtime (seconds):", font=('Segoe UI', 12, 'bold'), bg='#e9ebe0', fg='#202020')
 time_heading.pack(anchor='w', padx=40, pady=(5, 5))
 
@@ -153,7 +150,6 @@ for text_label, key in time_items:
     time_labels[key] = val_lbl
 
 def thread_handler(sort_func, algo_label, data_list):
-    """包裝執行緒，精準記錄執行總耗時"""
     start_time = time.time()
     sort_func(data_list, progress)
     runtimes[algo_label] = time.time() - start_time
@@ -173,7 +169,6 @@ def start_simulations():
     test_data = list(range(1, 201))
     random.shuffle(test_data)
     
-    # 三個 thread 獨立且同步地併發執行演算法
     t1 = threading.Thread(target=thread_handler, args=(selection_sort, 'Selection', test_data), daemon=True)
     t2 = threading.Thread(target=thread_handler, args=(bubble_sort, 'Bubble', test_data), daemon=True)
     t3 = threading.Thread(target=thread_handler, args=(run_quick_sort, 'Quick', test_data), daemon=True)
@@ -183,7 +178,6 @@ def start_simulations():
     t3.start()
 
 def refresh_window():
-    """定時主循環：每 20 毫秒刷新重繪一次 UI"""
     for key, bar in bars.items():
         pct = progress[key]
         bar['value'] = pct
@@ -199,7 +193,6 @@ def refresh_window():
         
     root.after(20, refresh_window)
 
-# 底部按鈕列佈局
 btn_frame = tk.Frame(root, bg='#e9ebe0')
 btn_frame.pack(fill=tk.X, padx=40, pady=(30, 0))
 
@@ -209,7 +202,6 @@ start_btn.pack(side=tk.LEFT)
 quit_btn = tk.Button(btn_frame, text="Quit", command=root.destroy, font=('Segoe UI', 11), bg='#a0a0a0', fg='white', activebackground='#b5b5b5', activeforeground='white', bd=0, padx=20, pady=6, cursor='hand2')
 quit_btn.pack(side=tk.RIGHT)
 
-# 啟動事件守護機制
 refresh_window()
 root.update()
 root.mainloop()
