@@ -36,8 +36,7 @@ def bubble_sort(arr, progress_dict):
             if data_list[j] > data_list[j + 1]:
                 data_list[j], data_list[j + 1] = data_list[j + 1], data_list[j]
         
-        # 即時更新進度並引入一模一樣的 0.01 秒公平延遲基準
-        # 因為 Bubble 執行的基礎操作基數大，它會自然比 Selection 還慢，完美達到 6 秒以上的效果
+        # 穩定維持在每擠完一個最大值，就更新進度並公平延遲 0.01 秒
         progress_dict['Bubble'] = ((n - i + 1) / (n - 1)) * 100
         time.sleep(0.01)
 
@@ -205,7 +204,7 @@ start_btn.pack(side=tk.LEFT)
 quit_btn = tk.Button(btn_frame, text="Quit", command=root.destroy, font=('Segoe UI', 11), bg='#a0a0a0', fg='white', activebackground='#b5b5b5', activeforeground='white', bd=0, padx=20, pady=6, cursor='hand2')
 quit_btn.pack(side=tk.RIGHT)
 
-# 啟動事件與強制繪製守護機制，確保穩定彈窗
+# 啟動事件守護機制
 refresh_window()
 root.update()
 root.mainloop()
