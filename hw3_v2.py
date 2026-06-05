@@ -4,15 +4,15 @@ import threading
 import tkinter as tk
 
 # ==========================================
-# 1. 自訂排序演算法 (核心學習重點：嚴格遵循投影片邏輯)
+# 1. 自訂排序演算法 (嚴格遵循投影片邏輯)
 # ==========================================
 
 def selection_sort(arr, progress_dict):
     """
-    選擇排序法：反覆從未排序數列中找最小值，與左邊數字交換 (O(n²))
+    選擇排序法：反覆從未排序數列中找最小值，與左邊數字交換
     """
     n = len(arr)
-    data = list(arr)  # 複製一份避免執行緒互相干擾
+    data = list(arr)
     
     for i in range(n):
         min_idx = i
@@ -21,13 +21,12 @@ def selection_sort(arr, progress_dict):
                 min_idx = j
         data[i], data[min_idx] = data[min_idx], data[i]
         
-        # 計算並更新進度百分比
         progress_dict['Selection'] = ((i + 1) / n) * 100
-        time.sleep(0.01)  # 稍微延遲讓進度條動畫明顯
+        time.sleep(0.01)
 
 def bubble_sort(arr, progress_dict):
     """
-    泡泡排序法：逐一比較相鄰元素，將最大者往後「擠」 (O(n²))
+    泡泡排序法：逐一比較相鄰元素，將最大者往後「擠」
     """
     n = len(arr)
     data = list(arr)
@@ -37,7 +36,6 @@ def bubble_sort(arr, progress_dict):
             if data[j] > data[j + 1]:
                 data[j], data[j + 1] = data[j + 1], data[j]
         
-        # 更新進度百分比 (做完一輪擠出一個最大值)
         progress_dict['Bubble'] = ((n - i + 1) / (n - 1)) * 100
         time.sleep(0.01)
 
@@ -53,25 +51,20 @@ def quick_sort_recursive(data, start, end, total_len, progress_dict):
     right = end
     
     while left != right:
-        # 右指標向左移動，直到數值小於基準點
         while data[right] >= data[pivot] and left < right:
             right -= 1
-        # 左指標向右移動，直到數值大於基準點
         while data[left] <= data[pivot] and left < right:
             left += 1
             
         if left < right:
-            data[left], data[right] = data[right], data[left]  #
+            data[left], data[right] = data[right], data[left]
             
-    # 左右指標相撞，交換基準點與相撞處數值
     data[pivot], data[right] = data[right], data[pivot]
     
-    # 動態估算進度 (以已切分完畢的比例計算)
     current_sorted = total_len - (end - start)
     progress_dict['Quick'] = min(99.0, (current_sorted / total_len) * 100)
-    time.sleep(0.002)  # 稍微延遲讓 Quick Sort 有動畫漸進感
+    time.sleep(0.002)
     
-    # 遞迴處理左右子陣列
     quick_sort_recursive(data, start, right - 1, total_len, progress_dict)
     quick_sort_recursive(data, right + 1, end, total_len, progress_dict)
 
@@ -79,7 +72,7 @@ def run_quick_sort(arr, progress_dict):
     data = list(arr)
     n = len(data)
     quick_sort_recursive(data, 0, n - 1, n, progress_dict)
-    progress_dict['Quick'] = 100.0  # 結束時確保為 100%
+    progress_dict['Quick'] = 100.0
 
 # ==========================================
 # 2. 視窗與視覺化呈現 (允許使用 Tkinter 處理外殼)
@@ -87,47 +80,94 @@ def run_quick_sort(arr, progress_dict):
 
 class SortingHomeworkWindow:
     def __init__(self):
-        # 建立主視窗 (彈跳視窗)
         self.root = tk.Tk()
         self.root.title("Sorting Algorithms Efficiency")
         self.root.geometry("550x400")
         
-        # 即時數據共享結構
         self.progress = {'Selection': 0.0, 'Bubble': 0.0, 'Quick': 0.0}
         self.runtimes = {'Selection': 0.0, 'Bubble': 0.0, 'Quick': 0.0}
         self.is_running = False
         
-        # 視窗標題文字
         title = tk.Label(self.root, text="Sorting Algorithms Efficiency", font=('Helvetica', 16, 'bold'))
         title.pack(pady=10)
         
-        # 核心畫布：用來手動繪製進度條與時間
         self.canvas = tk.Canvas(self.root, width=500, height=180, bg='white', borderwidth=1, relief="solid")
         self.canvas.pack(pady=10)
         
-        # 按鈕區域 (包含開始與關閉視窗的鍵)
         btn_frame = tk.Frame(self.root)
         btn_frame.pack(pady=15)
         
-        # 開始模擬鍵
         self.start_btn = tk.Button(btn_frame, text="Start Simulations", command=self.start_simulations, width=15, font=('Helvetica', 10, 'bold'))
         self.start_btn.pack(side=tk.LEFT, padx=10)
         
-        # 關閉視窗鍵
         quit_btn = tk.Button(btn_frame, text="Quit", command=self.root.destroy, width=10, font=('Helvetica', 10))
         quit_btn.pack(side=tk.LEFT, padx=10)
         
-        # 繪製初始狀態介面
         self.draw_interface()
-        
-        # 啟動每 20 毫秒自動重新渲染畫面的循環
         self.refresh_window()
-        
-        # 【關鍵修復】執行 Tkinter 主事件循環，防止視窗一瞬間自動關閉
         self.root.mainloop()
 
     def draw_interface(self):
-        """完全由程式碼手動計算座標，將演算法效能進度『畫』在畫布上"""
-        self.canvas.delete("all")  # 擦除舊畫面
+        self.canvas.delete("all")
         
-        algos =
+        algos = ['Selection', 'Bubble', 'Quick']
+        colors = ['#2ecc71', '#f1c40f', '#3498db']
+        
+        for i, algo in enumerate(algos):
+            y = 30 + i * 55
+            pct = self.progress[algo]
+            
+            self.canvas.create_text(100, y, text=f"{algo} Sort:", font=('Helvetica', 11, 'bold'), anchor='e')
+            self.canvas.create_rectangle(110, y - 10, 360, y + 10, outline='gray')
+            
+            bar_width = 110 + int(250 * (pct / 100))
+            if bar_width > 110:
+                self.canvas.create_rectangle(110, y - 10, bar_width, y + 10, fill=colors[i], outline='')
+                
+            self.canvas.create_text(375, y, text=f"{int(pct)}%", font=('Helvetica', 10, 'bold'), anchor='w')
+            
+            if pct == 100.0:
+                status_text = f"{self.runtimes[algo]:.6f} s"
+            elif self.is_running:
+                status_text = "Running..."
+            else:
+                status_text = "Pending..."
+                
+            self.canvas.create_text(425, y, text=status_text, font=('Courier', 10), anchor='w')
+
+    def thread_handler(self, sort_func, algo_label, data_list):
+        start_time = time.time()
+        sort_func(data_list, self.progress)
+        self.runtimes[algo_label] = time.time() - start_time
+        self.progress[algo_label] = 100.0
+
+    def start_simulations(self):
+        if self.is_running:
+            return
+        self.is_running = True
+        self.start_btn.config(state=tk.DISABLED)
+        
+        self.progress = {'Selection': 0.0, 'Bubble': 0.0, 'Quick': 0.0}
+        self.runtimes = {'Selection': 0.0, 'Bubble': 0.0, 'Quick': 0.0}
+        
+        test_data = list(range(1, 201))
+        random.shuffle(test_data)
+        
+        t1 = threading.Thread(target=self.thread_handler, args=(selection_sort, 'Selection', test_data), daemon=True)
+        t2 = threading.Thread(target=self.thread_handler, args=(bubble_sort, 'Bubble', test_data), daemon=True)
+        t3 = threading.Thread(target=self.thread_handler, args=(run_quick_sort, 'Quick', test_data), daemon=True)
+        
+        t1.start()
+        t2.start()
+        t3.start()
+
+    def refresh_window(self):
+        self.draw_interface()
+        if self.is_running and all(pct == 100.0 for pct in self.progress.values()):
+            self.is_running = False
+            self.start_btn.config(state=tk.NORMAL)
+            
+        self.root.after(20, self.refresh_window)
+
+if __name__ == '__main__':
+    SortingHomeworkWindow()
