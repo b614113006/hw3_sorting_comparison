@@ -8,14 +8,14 @@ import tkinter as tk
 # ==========================================
 def selection_sort(arr, viz_callback):
     n = len(arr)
-    for i in range(n):  # for (i in all elements of array) [cite: 2306]
+    for i in range(n):  # for (i in all elements of array)
         smallest_idx = i
-        for j in range(i + 1, n):  # for (j in i+1 to the last element of array) [cite: 2307]
-            if arr[j] < arr[smallest_idx]:  # find smallest values [cite: 2307]
+        for j in range(i + 1, n):  # for (j in i+1 to the last element of array)
+            if arr[j] < arr[smallest_idx]:  # find smallest values
                 smallest_idx = j
             viz_callback(arr, current=j, target=smallest_idx)
             time.sleep(0.01)
-        arr[i], arr[smallest_idx] = arr[smallest_idx], arr[i]  # swap [cite: 2307]
+        arr[i], arr[smallest_idx] = arr[smallest_idx], arr[i]  # swap
         viz_callback(arr, current=i, target=smallest_idx)
         time.sleep(0.01)
     viz_callback(arr, done=True)
@@ -25,10 +25,10 @@ def selection_sort(arr, viz_callback):
 # ==========================================
 def bubble_sort(arr, viz_callback):
     n = len(arr)
-    for i in range(n, 0, -1):  # for (i from n to 1) [cite: 2568]
-        for j in range(0, i - 1):  # for (j in 0 to i-1) (修正邊界符合簡報概念) [cite: 2570]
-            if arr[j] > arr[j + 1]:  # if (array[j] > array[j+1]) (改為相鄰比較) [cite: 2571]
-                arr[j], arr[j + 1] = arr[j + 1], arr[j]  # swap [cite: 2572]
+    for i in range(n, 0, -1):  # for (i from n to 1)
+        for j in range(0, i - 1):  # for (j in 0 to i-1)
+            if arr[j] > arr[j + 1]:  # if (array[j] > array[j+1])
+                arr[j], arr[j + 1] = arr[j + 1], arr[j]  # swap
             viz_callback(arr, current=j, target=j+1)
             time.sleep(0.01)
     viz_callback(arr, done=True)
@@ -41,44 +41,44 @@ def quick_sort_wrapper(arr, viz_callback):
     viz_callback(arr, done=True)
 
 def _quick_sort(arr, start, end, viz_callback):
-    if start >= end:  # if (array length <= 1) 終止條件 [cite: 2972]
+    if start >= end:  # if (array length <= 1) 終止條件
         return
         
-    pivot = start  # 將陣列最開始元素當成基準點 [cite: 2629, 2976]
-    left = start   # left = start [cite: 2977]
-    right = end    # right = end [cite: 2978]
+    pivot = start  # 將陣列最開始元素當成基準點
+    left = start   # left = start
+    right = end    # right = end
     
-    while left < right:  # while (left != right) [cite: 2979]
-        # decrease right until (array[right] < array[pivot]) [cite: 2980]
+    while left < right:  # while (left != right)
+        # decrease right until (array[right] < array[pivot])
         while left < right and arr[right] >= arr[pivot]:
             right -= 1
             viz_callback(arr, current=right, target=pivot)
             time.sleep(0.01)
             
-        # increase left until (array[left] > array[pivot]) [cite: 2980]
+        # increase left until (array[left] > array[pivot])
         while left < right and arr[left] <= arr[pivot]:
             left += 1
             viz_callback(arr, current=left, target=pivot)
             time.sleep(0.01)
             
         if left < right:
-            arr[left], arr[right] = arr[right], arr[left]  # swap(array[left], array[right]) [cite: 2980]
+            arr[left], arr[right] = arr[right], arr[left]  # swap(array[left], array[right])
             viz_callback(arr, current=left, target=right)
             time.sleep(0.01)
             
-    arr[pivot], arr[right] = arr[right], arr[pivot]  # swap(array[pivot], array[right]) [cite: 2981]
+    arr[pivot], arr[right] = arr[right], arr[pivot]  # swap(array[pivot], array[right])
     viz_callback(arr, current=right, target=pivot)
     time.sleep(0.01)
     
-    _quick_sort(arr, start, right - 1, viz_callback)  # QuickSort(array, start, pivot - 1) [cite: 2981]
-    _quick_sort(arr, right + 1, end, viz_callback)    # QuickSort(array, pivot + 1, end) [cite: 2981]
+    _quick_sort(arr, start, right - 1, viz_callback)  # QuickSort(array, start, pivot - 1)
+    _quick_sort(arr, right + 1, end, viz_callback)    # QuickSort(array, pivot + 1, end)
 
 
 # ==========================================
 # Tkinter GUI 視覺化介面
 # ==========================================
 class SortingVisualizer:
-    def __init__(self, root, data_size=30):
+    def __init__(self, root, data_size=40):
         self.root = root
         self.root.title("演算法效能比較 (Selection vs Bubble vs Quick)")
         
@@ -120,7 +120,7 @@ class SortingVisualizer:
         elif col == 1:
             self.canvas_bub, self.lbl_bub = canvas, time_label
             self.draw_data(self.canvas_bub, self.data_bubble)
-        pass
+        elif col == 2:
             self.canvas_qck, self.lbl_qck = canvas, time_label
             self.draw_data(self.canvas_qck, self.data_quick)
 
@@ -130,14 +130,12 @@ class SortingVisualizer:
         max_val = max(self.original_data)
         
         for i, val in enumerate(arr):
-            # 計算長條圖高度
             bar_height = (val / max_val) * (self.canvas_height - 20)
             x0 = i * bar_width
             y0 = self.canvas_height - bar_height
             x1 = (i + 1) * bar_width
             y1 = self.canvas_height
             
-            # 定義顏色：完成為綠色，當前指標為紅色/黃色，其餘為藍色
             if done:
                 color = "#2ecc71"
             elif i == current:
@@ -152,28 +150,4 @@ class SortingVisualizer:
     def start_sorting(self):
         self.btn_start.config(state=tk.DISABLED)
         
-        # 建立三個 Thread 獨立跑排序 [cite: 1611, 2584]
-        t1 = threading.Thread(target=selection_sort, args=(self.data_selection, self.get_callback(self.canvas_sel, self.lbl_sel)))
-        t2 = threading.Thread(target=bubble_sort, args=(self.data_bubble, self.get_callback(self.canvas_bub, self.lbl_bub)))
-        t3 = threading.Thread(target=quick_sort_wrapper, args=(self.data_quick, self.get_callback(self.canvas_qck, self.lbl_qck)))
-        
-        t1.start()
-        t2.start()
-        t3.start()
-
-    def get_callback(self, canvas, label):
-        start_time = time.time()
-        def callback(arr, current=-1, target=-1, done=False):
-            elapsed = time.time() - start_time
-            # 使用 root.after 確保安全在主線程更新 UI
-            self.root.after(0, lambda: self.update_ui(canvas, label, arr, current, target, elapsed, done))
-        return callback
-
-    def update_ui(self, canvas, label, arr, current, target, elapsed, done):
-        self.draw_data(canvas, arr, current, target, done)
-        label.config(text=f"時間: {elapsed:.3f}s")
-
-if __name__ == "__main__":
-    window = tk.Tk()
-    app = SortingVisualizer(window, data_size=40)
-    window.mainloop()
+        t1 = threading.Thread(target=selection_sort, args=(self.data_selection, self.get_
