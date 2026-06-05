@@ -5,7 +5,7 @@ import tkinter as tk
 from tkinter import ttk
 
 # ==========================================
-# 1. 自訂排序演算法 (精準時間流速控制，拒絕發抖)
+# 1. 自訂排序演算法 (精準計數器流速控制，拒絕發抖)
 # ==========================================
 
 def selection_sort(arr, progress_dict):
@@ -21,7 +21,7 @@ def selection_sort(arr, progress_dict):
                 min_idx = j
         data_list[i], data_list[min_idx] = data_list[min_idx], data_list[i]
         
-        # 穩定在 2.1 秒左右走完
+        # 穩定在 2.1 秒左右前進完畢
         progress_dict['Selection'] = ((i + 1) / n) * 100
         time.sleep(0.01)
 
@@ -36,13 +36,13 @@ def bubble_sort(arr, progress_dict):
             if data_list[j] > data_list[j + 1]:
                 data_list[j], data_list[j + 1] = data_list[j + 1], data_list[j]
         
-        # 穩定在 2.1 秒左右走完 (與 Selection 同步)
+        # 穩定在 2.1 秒左右前進完畢
         progress_dict['Bubble'] = ((n - i + 1) / (n - 1)) * 100
         time.sleep(0.01)
 
-def quick_sort_recursive(data_list, start, end, total_len, progress_dict, depth=0):
+def quick_sort_recursive(data_list, start, end, total_len, progress_dict, counter_list):
     """
-    快速排序法核心遞迴：引入 depth 參數控制延遲，徹底根除 1.4秒累積與發抖 Bug
+    快速排序法核心遞迴：雙指標朝中間移動（嚴格遵循投影片第12頁虛擬碼邏輯）
     """
     if start >= end:
         return
@@ -52,43 +52,47 @@ def quick_sort_recursive(data_list, start, end, total_len, progress_dict, depth=
     while left != right:
         while data_list[right] >= data_list[pivot] and left < right:
             right -= 1
+            # 沒跳過一個元素，計數器就加 1
+            counter_list[0] += 1
+            if counter_list[0] % 250 == 0:
+                current_pct = min(99.0, (counter_list[0] / 1500) * 100)
+                progress_dict['Quick'] = current_pct
+                time.sleep(0.01) # 精準踩煞車，等一下再出發
+                
         while data_list[left] <= data_list[pivot] and left < right:
             left += 1
+            counter_list[0] += 1
+            if counter_list[0] % 250 == 0:
+                current_pct = min(99.0, (counter_list[0] / 1500) * 100)
+                progress_dict['Quick'] = current_pct
+                time.sleep(0.01) # 精準踩煞車，等一下再出發
+                
         if left < right:
             data_list[left], data_list[right] = data_list[right], data_list[left]
+            
     data_list[pivot], data_list[right] = data_list[right], data_list[pivot]
     
-    current_sorted = total_len - (end - start)
-    current_pct = min(99.0, (current_sorted / total_len) * 100)
-    
-    # 【關鍵機制】只有在前幾層主幹切分時才踩煞車，避免深層遞迴數百次 sleep 疊加導致發抖與卡頓
-    if depth < 4:
-        progress_dict['Quick'] = current_pct
-        time.sleep(0.03)  # 給予適當延遲以供多執行緒視覺化同步起跑觀察
-    else:
-        # 深層遞迴時，只在進度高於當前畫面上顯示的值時才推進，防止數字上下來回發抖
-        if current_pct > progress_dict['Quick']:
-            progress_dict['Quick'] = current_pct
-            
-    # 遞迴呼叫時，層數（depth）加 1
-    quick_sort_recursive(data_list, start, right - 1, total_len, progress_dict, depth + 1)
-    quick_sort_recursive(data_list, right + 1, end, total_len, progress_dict, depth + 1)
+    # 遞迴處理左右子陣列
+    quick_sort_recursive(data_list, start, right - 1, total_len, progress_dict, counter_list)
+    quick_sort_recursive(data_list, right + 1, end, total_len, progress_dict, counter_list)
 
 def run_quick_sort(arr, progress_dict):
     """快速排序法執行緒入口"""
     data_list = list(arr)
     n = len(data_list)
-    quick_sort_recursive(data_list, 0, n - 1, n, progress_dict, depth=0)
-    progress_dict['Quick'] = 100.0  # 順暢定格在 100%
+    # 使用可變清單作為全域計數器，傳入遞迴中
+    counter_list = [0]
+    quick_sort_recursive(data_list, 0, n - 1, n, progress_dict, counter_list)
+    progress_dict['Quick'] = 100.0  # 完工時乾淨俐落定格在 100%
 
 # ==========================================
-# 2. 全域視窗與現代化視覺化 (Tkinter 與 圓角樣式)
+# 2. 全域視窗與現代化視覺化 (Tkinter 穩定架構)
 # ==========================================
 
 root = tk.Tk()
 root.title("Sorting Algorithm Efficiency Comparison (Threaded)")
 root.geometry("640x480")
-root.configure(bg='#e9ebe0')  # 柔和質感米灰色背景
+root.configure(bg='#e9ebe0')  # 質感米灰色背景
 root.resizable(False, False)
 
 # 共享即時資料結構
@@ -96,11 +100,12 @@ progress = {'Selection': 0.0, 'Bubble': 0.0, 'Quick': 0.0}
 runtimes = {'Selection': 0.0, 'Bubble': 0.0, 'Quick': 0.0}
 status_vars = {"is_running": False}
 
-# 設置 ttk 圓角青藍色樣式风格
+# 設置 ttk 圓角青藍色樣式
 style = ttk.Style()
 style.theme_use('clam')
 style.configure("Teal.Horizontal.TProgressbar", troughcolor='#cccccc', background='#218c9f', thickness=22, borderwidth=0)
 
+# 大標題
 title_label = tk.Label(root, text="Sorting Algorithms Efficiency", font=('Segoe UI', 18), bg='#e9ebe0', fg='#202020')
 title_label.pack(pady=(25, 15))
 
@@ -169,6 +174,7 @@ def start_simulations():
     test_data = list(range(1, 201))
     random.shuffle(test_data)
     
+    # 三條 Thread 同步起跑
     t1 = threading.Thread(target=thread_handler, args=(selection_sort, 'Selection', test_data), daemon=True)
     t2 = threading.Thread(target=thread_handler, args=(bubble_sort, 'Bubble', test_data), daemon=True)
     t3 = threading.Thread(target=thread_handler, args=(run_quick_sort, 'Quick', test_data), daemon=True)
@@ -178,6 +184,7 @@ def start_simulations():
     t3.start()
 
 def refresh_window():
+    """定時主循環：每 20 毫秒刷新重繪一次 UI"""
     for key, bar in bars.items():
         pct = progress[key]
         bar['value'] = pct
@@ -193,6 +200,7 @@ def refresh_window():
         
     root.after(20, refresh_window)
 
+# 按鈕列佈局
 btn_frame = tk.Frame(root, bg='#e9ebe0')
 btn_frame.pack(fill=tk.X, padx=40, pady=(30, 0))
 
