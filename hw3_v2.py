@@ -5,7 +5,7 @@ import tkinter as tk
 from tkinter import ttk
 
 # ==========================================
-# 1. 自訂排序演算法 (嚴格遵循投影片與作業規範)
+# 1. 自訂排序演算法 (核心重點：嚴格遵循投影片邏輯)
 # ==========================================
 
 def selection_sort(arr, progress_dict):
@@ -14,14 +14,12 @@ def selection_sort(arr, progress_dict):
     """
     n = len(arr)
     data = list(arr)
-    
     for i in range(n):
         min_idx = i
         for j in range(i + 1, n):
             if data[j] < data[min_idx]:
                 min_idx = j
         data[i], data[min_idx] = data[min_idx], data[i]
-        
         progress_dict['Selection'] = ((i + 1) / n) * 100
         time.sleep(0.01)
 
@@ -31,7 +29,6 @@ def insertion_sort(arr, progress_dict):
     """
     n = len(arr)
     data = list(arr)
-    
     for i in range(1, n):
         key_val = data[i]
         j = i - 1
@@ -39,36 +36,30 @@ def insertion_sort(arr, progress_dict):
             data[j + 1] = data[j]
             j -= 1
         data[j + 1] = key_val
-        
         progress_dict['Insertion'] = (i / (n - 1)) * 100
         time.sleep(0.01)
 
 def quick_sort_recursive(data, start, end, total_len, progress_dict):
     """
-    快速排序法核心遞迴：雙指標朝中間移動（嚴格遵循投影片第12頁虛擬碼邏輯）
+    快速排序法：雙指標朝中間移動（嚴格遵循投影片第12頁虛擬碼邏輯）
     """
     if start >= end:
         return
-        
     pivot = start
     left = start
     right = end
-    
     while left != right:
         while data[right] >= data[pivot] and left < right:
             right -= 1
         while data[left] <= data[pivot] and left < right:
             left += 1
-            
         if left < right:
             data[left], data[right] = data[right], data[left]
-            
     data[pivot], data[right] = data[right], data[pivot]
     
     current_sorted = total_len - (end - start)
     progress_dict['Quick'] = min(99.0, (current_sorted / total_len) * 100)
     time.sleep(0.002)
-    
     quick_sort_recursive(data, start, right - 1, total_len, progress_dict)
     quick_sort_recursive(data, right + 1, end, total_len, progress_dict)
 
@@ -87,7 +78,7 @@ class SortingHomeworkWindow:
         self.root = root_window
         self.root.title("Sorting Algorithm Efficiency Comparison (Threaded)")
         self.root.geometry("640x480")
-        self.root.configure(bg='#e9ebe0')  # 質感米灰色背景
+        self.root.configure(bg='#e9ebe0')
         self.root.resizable(False, False)
         
         # 資料共享結構
@@ -95,25 +86,13 @@ class SortingHomeworkWindow:
         self.runtimes = {'Selection': 0.0, 'Insertion': 0.0, 'Quick': 0.0}
         self.is_running = False
         
-        # 設置 ttk 樣式風格
+        # 設置 ttk 樣式風格 (調配圓角進度條)
         self.style = ttk.Style()
         self.style.theme_use('clam')
-        self.style.configure(
-            "Teal.Horizontal.TProgressbar", 
-            troughcolor='#cccccc', 
-            background='#218c9f',  # 青藍色
-            thickness=22, 
-            borderwidth=0
-        )
+        self.style.configure("Teal.Horizontal.TProgressbar", troughcolor='#cccccc', background='#218c9f', thickness=22, borderwidth=0)
         
-        # 頂部大標題
-        title_label = tk.Label(
-            self.root, 
-            text="Sorting Algorithms Efficiency", 
-            font=('Segoe UI', 18), 
-            bg='#e9ebe0', 
-            fg='#202020'
-        )
+        # 標題
+        title_label = tk.Label(self.root, text="Sorting Algorithms Efficiency", font=('Segoe UI', 18), bg='#e9ebe0', fg='#202020')
         title_label.pack(pady=(25, 15))
         
         # 主框架
@@ -124,6 +103,7 @@ class SortingHomeworkWindow:
         self.bars = {}
         self.percent_labels = {}
         
+        # 繪製演算法名稱與進度條區塊
         for name, key in algos:
             row = tk.Frame(main_frame, bg='#e9ebe0')
             row.pack(fill=tk.X, pady=6)
@@ -142,17 +122,18 @@ class SortingHomeworkWindow:
             pct_lbl.pack(side=tk.LEFT)
             self.percent_labels[key] = pct_lbl
             
-        # 狀態標籤
+        # 狀態標籤 (Ready / Running...)
         self.status_label = tk.Label(self.root, text="Ready", font=('Segoe UI', 12), bg='#e9ebe0', fg='#444444')
         self.status_label.pack(anchor='w', padx=40, pady=(15, 10))
         
-        # 時間耗時區塊
+        # 耗時面板大標題
         time_heading = tk.Label(self.root, text="Total runtime (seconds):", font=('Segoe UI', 12, 'bold'), bg='#e9ebe0', fg='#202020')
         time_heading.pack(anchor='w', padx=40, pady=(5, 5))
         
         self.time_labels = {}
         time_items = [('Selection Sort:', 'Selection'), ('Insertion Sort:', 'Insertion'), ('Quick Sort:', 'Quick')]
         
+        # 繪製計時顯示區域
         for text_label, key in time_items:
             t_row = tk.Frame(self.root, bg='#e9ebe0')
             t_row.pack(fill=tk.X, padx=40, pady=2)
@@ -164,15 +145,17 @@ class SortingHomeworkWindow:
             val_lbl.pack(side=tk.LEFT, padx=20)
             self.time_labels[key] = val_lbl
             
-        # 按鈕列
+        # 底部功能按鈕框架
         btn_frame = tk.Frame(self.root, bg='#e9ebe0')
         btn_frame.pack(fill=tk.X, padx=40, pady=(30, 0))
         
-        self.start_btn = tk.Button(
-            btn_frame, 
-            text="Start Simulations (▶)", 
-            command=self.start_simulations,
-            font=('Segoe UI', 11, 'bold'),
-            bg='#1d639b', 
-            fg='white',
-            activebackground='#257cb3',
+        # 開始模擬鍵 (修復：嚴格包裝單行括號，防範任何 SyntaxError 漏閉合)
+        self.start_btn = tk.Button(btn_frame, text="Start Simulations (▶)", command=self.start_simulations, font=('Segoe UI', 11, 'bold'), bg='#1d639b', fg='white', activebackground='#257cb3', activeforeground='white', bd=0, padx=15, pady=6, cursor='hand2')
+        self.start_btn.pack(side=tk.LEFT)
+        
+        # 關閉視窗鍵
+        quit_btn = tk.Button(btn_frame, text="Quit", command=self.root.destroy, font=('Segoe UI', 11), bg='#a0a0a0', fg='white', activebackground='#b5b5b5', activeforeground='white', bd=0, padx=20, pady=6, cursor='hand2')
+        quit_btn.pack(side=tk.RIGHT)
+        
+        # 啟動非同步
+        
