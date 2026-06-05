@@ -21,7 +21,7 @@ def selection_sort(arr, progress_dict):
                 min_idx = j
         data_list[i], data_list[min_idx] = data_list[min_idx], data_list[i]
         
-        # 即時更新 Selection Sort 進度並保持可觀察的延遲
+        # 即時更新 Selection Sort 進度並保持適當延遲以供動態觀察
         progress_dict['Selection'] = ((i + 1) / n) * 100
         time.sleep(0.01)
 
@@ -73,13 +73,13 @@ def run_quick_sort(arr, progress_dict):
     progress_dict['Quick'] = 100.0  # 完成時瞬間充滿
 
 # ==========================================
-# 2. 全域視窗與現代化視覺化 (Tkinter 與 圓角樣式)
+# 2. 全域視窗與現代化視覺化 (不拆分類別，最穩健的循序架構)
 # ==========================================
 
 root = tk.Tk()
 root.title("Sorting Algorithm Efficiency Comparison (Threaded)")
 root.geometry("640x480")
-root.configure(bg='#e9ebe0')  # 柔和現代感米灰色背景
+root.configure(bg='#e9ebe0')  # 質感米灰色背景
 root.resizable(False, False)
 
 # 共享即時資料結構
@@ -87,7 +87,7 @@ progress = {'Selection': 0.0, 'Bubble': 0.0, 'Quick': 0.0}
 runtimes = {'Selection': 0.0, 'Bubble': 0.0, 'Quick': 0.0}
 status_vars = {"is_running": False}
 
-# 設置 ttk 元件外觀風格 (質感青藍色)
+# 設置 ttk 元件外觀風格 (圓角與青藍色質感)
 style = ttk.Style()
 style.theme_use('clam')
 style.configure("Teal.Horizontal.TProgressbar", troughcolor='#cccccc', background='#218c9f', thickness=22, borderwidth=0)
@@ -96,7 +96,7 @@ style.configure("Teal.Horizontal.TProgressbar", troughcolor='#cccccc', backgroun
 title_label = tk.Label(root, text="Sorting Algorithms Efficiency", font=('Segoe UI', 18), bg='#e9ebe0', fg='#202020')
 title_label.pack(pady=(25, 15))
 
-# 主面板框架 (排版全部靠左垂直對齊)
+# 主面板框架 (排版全部靠左垂直對齊，絕不遮擋字體)
 main_frame = tk.Frame(root, bg='#e9ebe0')
 main_frame.pack(fill=tk.X, padx=40)
 
@@ -108,3 +108,102 @@ percent_labels = {}
 for name, key in algos:
     row = tk.Frame(main_frame, bg='#e9ebe0')
     row.pack(fill=tk.X, pady=6)
+    
+    lbl = tk.Label(row, text=name, font=('Segoe UI', 12), bg='#e9ebe0', fg='#333333', width=14, anchor='w')
+    lbl.pack(side=tk.LEFT)
+    
+    bar_frame = tk.Frame(row, bg='#e9ebe0')
+    bar_frame.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 10))
+    
+    bar = ttk.Progressbar(bar_frame, style="Teal.Horizontal.TProgressbar", orient="horizontal", mode="determinate", length=280)
+    bar.pack(fill=tk.X)
+    bars[key] = bar
+    
+    pct_lbl = tk.Label(row, text="0%", font=('Segoe UI', 11, 'bold'), bg='#e9ebe0', fg='#333333', width=5, anchor='e')
+    pct_lbl.pack(side=tk.LEFT)
+    percent_labels[key] = pct_lbl
+
+# 狀態標籤 (Ready / Running...)
+status_label = tk.Label(root, text="Ready", font=('Segoe UI', 12), bg='#e9ebe0', fg='#444444')
+status_label.pack(anchor='w', padx=40, pady=(15, 10))
+
+# 底部統計面板大標題
+time_heading = tk.Label(root, text="Total runtime (seconds):", font=('Segoe UI', 12, 'bold'), bg='#e9ebe0', fg='#202020')
+time_heading.pack(anchor='w', padx=40, pady=(5, 5))
+
+time_labels = {}
+time_items = [('Selection Sort:', 'Selection'), ('Bubble Sort:', 'Bubble'), ('Quick Sort:', 'Quick')]
+
+for text_label, key in time_items:
+    t_row = tk.Frame(root, bg='#e9ebe0')
+    t_row.pack(fill=tk.X, padx=40, pady=2)
+    
+    name_lbl = tk.Label(t_row, text=text_label, font=('Segoe UI', 11), bg='#e9ebe0', fg='#444444', width=14, anchor='w')
+    name_lbl.pack(side=tk.LEFT)
+    
+    val_lbl = tk.Label(t_row, text="-", font=('Consolas', 11), bg='#e9ebe0', fg='#444444', width=15, anchor='w')
+    val_lbl.pack(side=tk.LEFT, padx=20)
+    time_labels[key] = val_lbl
+
+def thread_handler(sort_func, algo_label, data_list):
+    """包裝執行緒，精準記錄執行總耗時"""
+    start_time = time.time()
+    sort_func(data_list, progress)
+    runtimes[algo_label] = time.time() - start_time
+    progress[algo_label] = 100.0
+
+def start_simulations():
+    if status_vars["is_running"]:
+        return
+    status_vars["is_running"] = True
+    start_btn.config(state=tk.DISABLED, bg='#cccccc')
+    status_label.config(text="Running...")
+    
+    for key in progress:
+        progress[key] = 0.0
+        time_labels[key].config(text="-")
+        
+    # 模擬隨機產出包含 N=200 個隨機不重覆數字
+    test_data = list(range(1, 201))
+    random.shuffle(test_data)
+    
+    # 【完美修正】三個執行緒獨立宣告，杜絕任何背景死鎖閃退
+    t1 = threading.Thread(target=thread_handler, args=(selection_sort, 'Selection', test_data), daemon=True)
+    t2 = threading.Thread(target=thread_handler, args=(bubble_sort, 'Bubble', test_data), daemon=True)
+    t3 = threading.Thread(target=thread_handler, args=(run_quick_sort, 'Quick', test_data), daemon=True)
+    
+    t1.start()
+    t2.start()
+    t3.start()
+
+def refresh_window():
+    """定時主循環：每 20 毫秒重繪 UI 元件"""
+    for key, bar in bars.items():
+        pct = progress[key]
+        bar['value'] = pct
+        percent_labels[key].config(text=f"{int(pct)}%")
+        
+        if pct == 100.0 and time_labels[key]['text'] == "-":
+            time_labels[key].config(text=f"{runtimes[key]:.6f} s")
+            
+    if status_vars["is_running"] and all(pct == 100.0 for pct in progress.values()):
+        status_vars["is_running"] = False
+        status_label.config(text="Ready")
+        start_btn.config(state=tk.NORMAL, bg='#1d639b')
+        
+    root.after(20, refresh_window)
+
+# 底部功能按鈕框架與排版 (完美對齊圖二)
+btn_frame = tk.Frame(root, bg='#e9ebe0')
+btn_frame.pack(fill=tk.X, padx=40, pady=(30, 0))
+
+start_btn = tk.Button(btn_frame, text="Start Simulations (▶)", command=start_simulations, font=('Segoe UI', 11, 'bold'), bg='#1d639b', fg='white', activebackground='#257cb3', activeforeground='white', bd=0, padx=15, pady=6, cursor='hand2')
+start_btn.pack(side=tk.LEFT)
+
+quit_btn = tk.Button(btn_frame, text="Quit", command=root.destroy, font=('Segoe UI', 11), bg='#a0a0a0', fg='white', activebackground='#b5b5b5', activeforeground='white', bd=0, padx=20, pady=6, cursor='hand2')
+quit_btn.pack(side=tk.RIGHT)
+
+# 啟動事件與強制繪製守護機制，確保穩定彈窗
+refresh_window()
+root.update()
+root.mainloop()
