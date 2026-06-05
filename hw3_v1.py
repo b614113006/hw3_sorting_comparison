@@ -100,3 +100,4 @@ def _quick_sort(arr, start, end, viz_callback):
     # 遞迴跑左右兩邊的子陣列
     _quick_sort(arr, start, right - 1, viz_callback)  # [cite: 1388, 1412]
     _quick_sort(arr, right + 1, end, viz_callback)    # [cite: 1388, 1412]
+print()
