@@ -5,12 +5,12 @@ import tkinter as tk
 from tkinter import ttk
 
 # ==========================================
-# 1. 自訂排序演算法 (嚴格遵循投影片與作業規範)
+# 1. 自訂排序演算法 (核心重點：嚴格遵循投影片與作業規範)
 # ==========================================
 
 def selection_sort(arr, progress_dict):
     """
-    選擇排序法：反覆從未排序數列中找最小值，與左邊數字交換
+    選擇排序法：反覆從未排序數列中找最小值，與左邊數字交換 (O(n²))
     """
     n = len(arr)
     data_list = list(arr)
@@ -20,12 +20,14 @@ def selection_sort(arr, progress_dict):
             if data_list[j] < data_list[min_idx]:
                 min_idx = j
         data_list[i], data_list[min_idx] = data_list[min_idx], data_list[i]
+        
+        # 保持適當延遲以供動態視覺化觀察
         progress_dict['Selection'] = ((i + 1) / n) * 100
         time.sleep(0.01)
 
 def insertion_sort(arr, progress_dict):
     """
-    插入排序法：將未排序元素逐一插入到左邊已排序數列的正確位置
+    插入排序法：將未排序元素逐一插入到左邊已排序數列的正確位置 (O(n²))
     """
     n = len(arr)
     data_list = list(arr)
@@ -36,6 +38,8 @@ def insertion_sort(arr, progress_dict):
             data_list[j + 1] = data_list[j]
             j -= 1
         data_list[j + 1] = key_val
+        
+        # 保持適當延遲以供動態視覺化觀察
         progress_dict['Insertion'] = (i / (n - 1)) * 100
         time.sleep(0.01)
 
@@ -57,40 +61,41 @@ def quick_sort_recursive(data_list, start, end, total_len, progress_dict):
             data_list[left], data_list[right] = data_list[right], data_list[left]
     data_list[pivot], data_list[right] = data_list[right], data_list[pivot]
     
+    # 【完美同步老師速度】移除所有 sleep，僅在遞迴切分時即時記錄內部定位進度
     current_sorted = total_len - (end - start)
     progress_dict['Quick'] = min(99.0, (current_sorted / total_len) * 100)
-    time.sleep(0.002)
+    
     quick_sort_recursive(data_list, start, right - 1, total_len, progress_dict)
     quick_sort_recursive(data_list, right + 1, end, total_len, progress_dict)
 
 def run_quick_sort(arr, progress_dict):
+    """快速排序法執行緒入口"""
     data_list = list(arr)
     n = len(data_list)
     quick_sort_recursive(data_list, 0, n - 1, n, progress_dict)
-    progress_dict['Quick'] = 100.0
+    progress_dict['Quick'] = 100.0  # 完成時瞬間拉回 100%
 
 # ==========================================
-# 2. 全域視窗與控制邏輯 (回歸標準扁平化穩定架構)
+# 2. 全域視窗與控制邏輯 (現代化米灰配青藍色樣式)
 # ==========================================
 
-# 建立視窗
 root = tk.Tk()
 root.title("Sorting Algorithm Efficiency Comparison (Threaded)")
 root.geometry("640x480")
-root.configure(bg='#e9ebe0')  # 質感米灰色背景
+root.configure(bg='#e9ebe0')  # 圖二質感米灰色背景
 root.resizable(False, False)
 
-# 共享即時資料結構
+# 即時數據共享結構
 progress = {'Selection': 0.0, 'Insertion': 0.0, 'Quick': 0.0}
 runtimes = {'Selection': 0.0, 'Insertion': 0.0, 'Quick': 0.0}
 status_vars = {"is_running": False}
 
-# 設定進度條圓角現代樣式
+# 設置現代化進度條元件樣式設定
 style = ttk.Style()
 style.theme_use('clam')
 style.configure("Teal.Horizontal.TProgressbar", troughcolor='#cccccc', background='#218c9f', thickness=22, borderwidth=0)
 
-# 頂部大標題
+# 頂部標題
 title_label = tk.Label(root, text="Sorting Algorithms Efficiency", font=('Segoe UI', 18), bg='#e9ebe0', fg='#202020')
 title_label.pack(pady=(25, 15))
 
@@ -98,7 +103,7 @@ title_label.pack(pady=(25, 15))
 main_frame = tk.Frame(root, bg='#e9ebe0')
 main_frame.pack(fill=tk.X, padx=40)
 
-# 建立進度條元件
+# 建立畫布元件
 algos = [('Selection Sort', 'Selection'), ('Insertion Sort', 'Insertion'), ('Quick Sort', 'Quick')]
 bars = {}
 percent_labels = {}
@@ -125,7 +130,7 @@ for name, key in algos:
 status_label = tk.Label(root, text="Ready", font=('Segoe UI', 12), bg='#e9ebe0', fg='#444444')
 status_label.pack(anchor='w', padx=40, pady=(15, 10))
 
-# 底部統計面板
+# 底部統計面板大標題
 time_heading = tk.Label(root, text="Total runtime (seconds):", font=('Segoe UI', 12, 'bold'), bg='#e9ebe0', fg='#202020')
 time_heading.pack(anchor='w', padx=40, pady=(5, 5))
 
@@ -143,14 +148,12 @@ for text_label, key in time_items:
     val_lbl.pack(side=tk.LEFT, padx=20)
     time_labels[key] = val_lbl
 
-# 執行緒包裝器
 def thread_handler(sort_func, algo_label, data_list):
     start_time = time.time()
     sort_func(data_list, progress)
     runtimes[algo_label] = time.time() - start_time
     progress[algo_label] = 100.0
 
-# 按鈕功能：開始模擬
 def start_simulations():
     if status_vars["is_running"]:
         return
@@ -165,16 +168,17 @@ def start_simulations():
     test_data = list(range(1, 201))
     random.shuffle(test_data)
     
-    # 三執行緒同步併發跑分比較效率
+    # 三執行緒同步併發跑排序
     t1 = threading.Thread(target=thread_handler, args=(selection_sort, 'Selection', test_data), daemon=True)
-    t2 = threading.Thread(target=threading.Thread(target=thread_handler, args=(insertion_sort, 'Insertion', test_data), daemon=True).start())
+    t2 = threading.Thread(target=thread_handler, args=(insertion_sort, 'Insertion', test_data), daemon=True)
     t3 = threading.Thread(target=thread_handler, args=(run_quick_sort, 'Quick', test_data), daemon=True)
     
     t1.start()
+    t2.start()
     t3.start()
 
-# 定時重新整理畫面的循環機制
 def refresh_window():
+    """定時主循環：每 20 毫秒刷新一次 UI"""
     for key, bar in bars.items():
         pct = progress[key]
         bar['value'] = pct
@@ -190,7 +194,7 @@ def refresh_window():
         
     root.after(20, refresh_window)
 
-# 按鈕列佈局
+# 底部功能按鈕列排版
 btn_frame = tk.Frame(root, bg='#e9ebe0')
 btn_frame.pack(fill=tk.X, padx=40, pady=(30, 0))
 
@@ -200,9 +204,7 @@ start_btn.pack(side=tk.LEFT)
 quit_btn = tk.Button(btn_frame, text="Quit", command=root.destroy, font=('Segoe UI', 11), bg='#a0a0a0', fg='white', activebackground='#b5b5b5', activeforeground='white', bd=0, padx=20, pady=6, cursor='hand2')
 quit_btn.pack(side=tk.RIGHT)
 
-# ==========================================
-# 3. 強制刷新並啟動 (最關鍵防秒退機制)
-# ==========================================
+# 啟動事件守護機制
 refresh_window()
-root.update()  # 強迫系統在啟動前渲染出視窗實體，防止被惡意回收
+root.update()
 root.mainloop()
