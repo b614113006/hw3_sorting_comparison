@@ -5,107 +5,127 @@ import tkinter as tk
 from tkinter import ttk
 
 # ==========================================
-# 1. 自訂排序演算法 (精準計數器流速控制，拒絕發抖)
+# 1. 自訂排序演算法 (唯一絕對公平基準：比對控速法)
 # ==========================================
 
 def selection_sort(arr, progress_dict):
     """
-    選擇排序法：反覆從未排序數列中找最小值，與左邊數字交換 (O(n²))
+    選擇排序法
     """
     n = len(arr)
     data_list = list(arr)
+    comparison_count = 0  # 紀錄實際比對次數
+    
     for i in range(n):
         min_idx = i
         for j in range(i + 1, n):
+            # 【絕對公平煞車點】每次執行數字大小比對，就累積計數
+            comparison_count += 1
+            if comparison_count % 100 == 0:
+                time.sleep(0.01) # 每比對 100 次，公平暫停 0.01 秒
+                
             if data_list[j] < data_list[min_idx]:
                 min_idx = j
+                
         data_list[i], data_list[min_idx] = data_list[min_idx], data_list[i]
         
-        # 穩定在 2.1 秒左右前進完畢
+        # 真實進度更新
         progress_dict['Selection'] = ((i + 1) / n) * 100
-        time.sleep(0.01)
 
 def bubble_sort(arr, progress_dict):
     """
-    泡泡排序法：逐一比較相鄰元素，將最大者往後「擠」 (O(n²))
+    泡泡排序法
     """
     n = len(arr)
     data_list = list(arr)
+    comparison_count = 0
+    
     for i in range(n, 1, -1):
         for j in range(0, i - 1):
+            # 【絕對公平煞車點】每次執行數字大小比對，就累積計數
+            comparison_count += 1
+            if comparison_count % 100 == 0:
+                time.sleep(0.01) # 每比對 100 次，公平暫停 0.01 秒
+                
             if data_list[j] > data_list[j + 1]:
                 data_list[j], data_list[j + 1] = data_list[j + 1], data_list[j]
-        
-        # 穩定在 2.1 秒左右前進完畢
+                
         progress_dict['Bubble'] = ((n - i + 1) / (n - 1)) * 100
-        time.sleep(0.01)
 
-def quick_sort_recursive(data_list, start, end, total_len, progress_dict, counter_list):
+def quick_sort_recursive(data_list, start, end, total_len, progress_dict, sorted_count, lock_obj, comp_counter):
     """
-    快速排序法核心遞迴：雙指標朝中間移動（嚴格遵循投影片第12頁虛擬碼邏輯）
+    快速排序法核心遞迴 (完全對齊比對延遲機制)
     """
     if start >= end:
+        if start == end:
+            with lock_obj:
+                sorted_count[0] += 1
+                progress_dict['Quick'] = min(99.0, (sorted_count[0] / total_len) * 100)
         return
+        
     pivot = start
     left = start
     right = end
+    
     while left != right:
+        # 右指標向左掃描比對
         while data_list[right] >= data_list[pivot] and left < right:
             right -= 1
-            # 沒跳過一個元素，計數器就加 1
-            counter_list[0] += 1
-            if counter_list[0] % 250 == 0:
-                current_pct = min(99.0, (counter_list[0] / 1500) * 100)
-                progress_dict['Quick'] = current_pct
-                time.sleep(0.01) # 精準踩煞車，等一下再出發
-                
+            with lock_obj:
+                comp_counter[0] += 1
+                if comp_counter[0] % 100 == 0:
+                    time.sleep(0.01) # 一模一樣：每比對 100 次，公平暫停 0.01 秒
+                    
+        # 左指標向右掃描比對
         while data_list[left] <= data_list[pivot] and left < right:
             left += 1
-            counter_list[0] += 1
-            if counter_list[0] % 250 == 0:
-                current_pct = min(99.0, (counter_list[0] / 1500) * 100)
-                progress_dict['Quick'] = current_pct
-                time.sleep(0.01) # 精準踩煞車，等一下再出發
-                
+            with lock_obj:
+                comp_counter[0] += 1
+                if comp_counter[0] % 100 == 0:
+                    time.sleep(0.01) # 一模一樣：每比對 100 次，公平暫停 0.01 秒
+                    
         if left < right:
             data_list[left], data_list[right] = data_list[right], data_list[left]
             
     data_list[pivot], data_list[right] = data_list[right], data_list[pivot]
     
-    # 遞迴處理左右子陣列
-    quick_sort_recursive(data_list, start, right - 1, total_len, progress_dict, counter_list)
-    quick_sort_recursive(data_list, right + 1, end, total_len, progress_dict, counter_list)
+    with lock_obj:
+        sorted_count[0] += 1
+        current_pct = (sorted_count[0] / total_len) * 100
+        if current_pct > progress_dict['Quick']:
+            progress_dict['Quick'] = min(99.0, current_pct)
+            
+    quick_sort_recursive(data_list, start, right - 1, total_len, progress_dict, sorted_count, lock_obj, comp_counter)
+    quick_sort_recursive(data_list, right + 1, end, total_len, progress_dict, sorted_count, lock_obj, comp_counter)
 
-def run_quick_sort(arr, progress_dict):
+def run_quick_sort(arr, progress_dict, lock_obj):
     """快速排序法執行緒入口"""
     data_list = list(arr)
     n = len(data_list)
-    # 使用可變清單作為全域計數器，傳入遞迴中
-    counter_list = [0]
-    quick_sort_recursive(data_list, 0, n - 1, n, progress_dict, counter_list)
-    progress_dict['Quick'] = 100.0  # 完工時乾淨俐落定格在 100%
+    sorted_count = [0]
+    comp_counter = [0] # 快速排序獨立的比對計數器
+    quick_sort_recursive(data_list, 0, n - 1, n, progress_dict, sorted_count, lock_obj, comp_counter)
+    progress_dict['Quick'] = 100.0
 
 # ==========================================
-# 2. 全域視窗與現代化視覺化 (Tkinter 穩定架構)
+# 2. 全域視窗與視覺化呈現 (Tkinter 核心控制)
 # ==========================================
 
 root = tk.Tk()
 root.title("Sorting Algorithm Efficiency Comparison (Threaded)")
 root.geometry("640x480")
-root.configure(bg='#e9ebe0')  # 質感米灰色背景
+root.configure(bg='#e9ebe0')
 root.resizable(False, False)
 
-# 共享即時資料結構
 progress = {'Selection': 0.0, 'Bubble': 0.0, 'Quick': 0.0}
 runtimes = {'Selection': 0.0, 'Bubble': 0.0, 'Quick': 0.0}
 status_vars = {"is_running": False}
+quick_lock = threading.Lock()
 
-# 設置 ttk 圓角青藍色樣式
 style = ttk.Style()
 style.theme_use('clam')
 style.configure("Teal.Horizontal.TProgressbar", troughcolor='#cccccc', background='#218c9f', thickness=22, borderwidth=0)
 
-# 大標題
 title_label = tk.Label(root, text="Sorting Algorithms Efficiency", font=('Segoe UI', 18), bg='#e9ebe0', fg='#202020')
 title_label.pack(pady=(25, 15))
 
@@ -160,6 +180,9 @@ def thread_handler(sort_func, algo_label, data_list):
     runtimes[algo_label] = time.time() - start_time
     progress[algo_label] = 100.0
 
+def run_quick_sort_wrapper(data_list, progress_dict):
+    run_quick_sort(data_list, progress_dict, quick_lock)
+
 def start_simulations():
     if status_vars["is_running"]:
         return
@@ -174,17 +197,15 @@ def start_simulations():
     test_data = list(range(1, 201))
     random.shuffle(test_data)
     
-    # 三條 Thread 同步起跑
     t1 = threading.Thread(target=thread_handler, args=(selection_sort, 'Selection', test_data), daemon=True)
     t2 = threading.Thread(target=thread_handler, args=(bubble_sort, 'Bubble', test_data), daemon=True)
-    t3 = threading.Thread(target=thread_handler, args=(run_quick_sort, 'Quick', test_data), daemon=True)
+    t3 = threading.Thread(target=thread_handler, args=(run_quick_sort_wrapper, 'Quick', test_data), daemon=True)
     
     t1.start()
     t2.start()
     t3.start()
 
 def refresh_window():
-    """定時主循環：每 20 毫秒刷新重繪一次 UI"""
     for key, bar in bars.items():
         pct = progress[key]
         bar['value'] = pct
@@ -200,7 +221,6 @@ def refresh_window():
         
     root.after(20, refresh_window)
 
-# 按鈕列佈局
 btn_frame = tk.Frame(root, bg='#e9ebe0')
 btn_frame.pack(fill=tk.X, padx=40, pady=(30, 0))
 
