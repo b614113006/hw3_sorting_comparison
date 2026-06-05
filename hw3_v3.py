@@ -56,12 +56,18 @@ def quick_sort_recursive(data_list, start, end, total_len, progress_dict):
             left += 1
         if left < right:
             data_list[left], data_list[right] = data_list[right], data_list[left]
+            
+    # 左右指標相撞，將基準點百正交換
     data_list[pivot], data_list[right] = data_list[right], data_list[pivot]
     
-# 計算當前的定位進度，【修復】完全拿掉內部 time.sleep，徹底根除 98% 抖動與卡頓 Bug！
+    # 在此時（基準點成功定位時），計算當前進度
     current_sorted = total_len - (end - start)
     progress_dict['Quick'] = min(99.0, (current_sorted / total_len) * 100)
     
+    # 引入 0.01 秒公平延遲基準
+    time.sleep(0.01)
+    
+    # 遞迴處理左右子陣列
     quick_sort_recursive(data_list, start, right - 1, total_len, progress_dict)
     quick_sort_recursive(data_list, right + 1, end, total_len, progress_dict)
 
