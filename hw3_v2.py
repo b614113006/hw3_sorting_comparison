@@ -61,7 +61,7 @@ def quick_sort_recursive(data, start, end, total_len, progress_dict):
             left += 1
             
         if left < right:
-            data[left], data[right] = data[right], data[left]
+            data[left], data[right] = data[right], data[left]  #
             
     # 左右指標相撞，交換基準點與相撞處數值
     data[pivot], data[right] = data[right], data[pivot]
@@ -105,9 +105,29 @@ class SortingHomeworkWindow:
         self.canvas = tk.Canvas(self.root, width=500, height=180, bg='white', borderwidth=1, relief="solid")
         self.canvas.pack(pady=10)
         
-        # 繪製初始狀態
+        # 按鈕區域 (包含開始與關閉視窗的鍵)
+        btn_frame = tk.Frame(self.root)
+        btn_frame.pack(pady=15)
+        
+        # 開始模擬鍵
+        self.start_btn = tk.Button(btn_frame, text="Start Simulations", command=self.start_simulations, width=15, font=('Helvetica', 10, 'bold'))
+        self.start_btn.pack(side=tk.LEFT, padx=10)
+        
+        # 關閉視窗鍵
+        quit_btn = tk.Button(btn_frame, text="Quit", command=self.root.destroy, width=10, font=('Helvetica', 10))
+        quit_btn.pack(side=tk.LEFT, padx=10)
+        
+        # 繪製初始狀態介面
         self.draw_interface()
         
-        # 按鈕區域 (跟老師一樣有開始與關閉視窗的鍵)
-        btn_frame = tk.Frame(self.root)
-        btn_
+        # 啟動每 20 毫秒自動重新渲染畫面的循環
+        self.refresh_window()
+        
+        # 【關鍵修復】執行 Tkinter 主事件循環，防止視窗一瞬間自動關閉
+        self.root.mainloop()
+
+    def draw_interface(self):
+        """完全由程式碼手動計算座標，將演算法效能進度『畫』在畫布上"""
+        self.canvas.delete("all")  # 擦除舊畫面
+        
+        algos =
