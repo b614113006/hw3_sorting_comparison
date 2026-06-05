@@ -8,15 +8,14 @@ import tkinter as tk
 # ==========================================
 def selection_sort(arr, viz_callback):
     n = len(arr)
-    for i in range(n):  # for (i in all elements of array)
+    for i in range(n):
         smallest_idx = i
-        for j in range(i + 1, n):  # for (j in i+1 to the last element of array)
-            if arr[j] < arr[smallest_idx]:  # find smallest values
+        for j in range(i + 1, n):
+            if arr[j] < arr[smallest_idx]:
                 smallest_idx = j
-            # 紅色代表目前掃描到的柱子，黃色代表目前認定的最小值柱子
             viz_callback(arr, current=j, target=smallest_idx, sorted_up_to=i)
             time.sleep(0.01)
-        arr[i], arr[smallest_idx] = arr[smallest_idx], arr[i]  # swap
+        arr[i], arr[smallest_idx] = arr[smallest_idx], arr[i]
         viz_callback(arr, current=i, target=smallest_idx, sorted_up_to=i+1)
         time.sleep(0.01)
     viz_callback(arr, done=True)
@@ -47,37 +46,35 @@ def quick_sort_wrapper(arr, viz_callback):
     viz_callback(arr, done=True)
 
 def _quick_sort(arr, start, end, viz_callback):
-    if start >= end:  # if (array length <= 1) 終止條件
+    if start >= end:
         return
         
-    pivot = start  # 將陣列最開始元素當成基準點
-    left = start   # left = start
-    right = end    # right = end
+    pivot = start
+    left = start
+    right = end
     
-    while left < right:  # while (left != right)
-        # decrease right until (array[right] < array[pivot])
+    while left < right:
         while left < right and arr[right] >= arr[pivot]:
             right -= 1
             viz_callback(arr, current=right, target=pivot)
             time.sleep(0.005)
             
-        # increase left until (array[left] > array[pivot])
         while left < right and arr[left] <= arr[pivot]:
             left += 1
             viz_callback(arr, current=left, target=pivot)
             time.sleep(0.005)
             
         if left < right:
-            arr[left], arr[right] = arr[right], arr[left]  # swap(array[left], array[right])
+            arr[left], arr[right] = arr[right], arr[left]
             viz_callback(arr, current=left, target=right)
             time.sleep(0.005)
             
-    arr[pivot], arr[right] = arr[right], arr[pivot]  # swap(array[pivot], array[right])
+    arr[pivot], arr[right] = arr[right], arr[pivot]
     viz_callback(arr, current=right, target=pivot)
     time.sleep(0.005)
     
-    _quick_sort(arr, start, right - 1, viz_callback)  # QuickSort(array, start, pivot - 1)
-    _quick_sort(arr, right + 1, end, viz_callback)    # QuickSort(array, pivot + 1, end)
+    _quick_sort(arr, start, right - 1, viz_callback)
+    _quick_sort(arr, right + 1, end, viz_callback)
 
 
 # ==========================================
@@ -90,24 +87,19 @@ class SortingVisualizer:
         self.root.configure(bg="#f0f0f0")
         
         self.data_size = data_size
-        # 產生包含 N 個隨機不重複數字
         self.original_data = list(range(5, 5 + data_size * 5, 5))
         random.shuffle(self.original_data)
         
-        # 複製三份給不同的演算法
         self.data_selection = list(self.original_data)
         self.data_insertion = list(self.original_data)
         self.data_quick = list(self.original_data)
         
-        # 讓畫布寬高配合長條圖呈現細緻外觀
         self.canvas_width = 300
         self.canvas_height = 250
         
-        # 建立上方大標題
         main_title = tk.Label(root, text="Sorting Algorithms Performance Comparison", font=("Helvetica", 14, "bold"), bg="#f0f0f0")
         main_title.pack(pady=10)
         
-        # 橫向排列的三個區域容器
         self.display_frame = tk.Frame(root, bg="#f0f0f0")
         self.display_frame.pack(padx=20)
         
@@ -115,7 +107,6 @@ class SortingVisualizer:
         self.create_canvas_section("Insertion Sort", 1)
         self.create_canvas_section("Quick Sort (雙指標)", 2)
         
-        # 控制按鈕區域 (已修正 padx 參數)
         self.btn_start = tk.Button(root, text="► 開始同步排序 (Multi-threading)", command=self.start_sorting, 
                                   font=("Microsoft JhengHei", 11, "bold"), bg="#2c3e50", fg="white", activebackground="#34495e")
         self.btn_start.pack(pady=15)
@@ -124,7 +115,6 @@ class SortingVisualizer:
         frame = tk.LabelFrame(self.display_frame, text=title, font=("Microsoft JhengHei", 10, "bold"), bg="white", padx=5, pady=5)
         frame.pack(side=tk.LEFT, padx=10)
         
-        # 建立黑色背景的長條圖畫布
         canvas = tk.Canvas(frame, width=self.canvas_width, height=self.canvas_height, bg="#1e1e1e", highlightthickness=0)
         canvas.pack()
         
@@ -143,8 +133,6 @@ class SortingVisualizer:
 
     def draw_data(self, canvas, arr, current=-1, target=-1, sorted_up_to=-1, done=False):
         canvas.delete("all")
-        
-        # 計算每根柱子的寬度與間距
         padding = 1
         bar_width = (self.canvas_width / self.data_size) - padding
         max_val = max(self.original_data)
@@ -156,27 +144,29 @@ class SortingVisualizer:
             x1 = x0 + bar_width
             y1 = self.canvas_height
             
-            # 動態色彩配置
             if done:
-                color = "#2ecc71"  # 排序全部完成：亮綠色
+                color = "#2ecc71"
             elif i == current:
-                color = "#e74c3c"  # 當前活動/比對指標：紅色
+                color = "#e74c3c"
             elif i == target:
-                color = "#f1c40f"  # 目標/基準/最小值位置：黃色
+                color = "#f1c40f"
             elif sorted_up_to != -1 and i < sorted_up_to:
-                color = "#27ae60"  # 局部已排序區域：深綠色
+                color = "#27ae60"
             else:
-                color = "#3498db"  # 未排序區域：天空藍
+                color = "#3498db"
                 
             canvas.create_rectangle(x0, y0, x1, y1, fill=color, outline="")
 
     def start_sorting(self):
         self.btn_start.config(state=tk.DISABLED, bg="#ccc")
         
-        # 同步啟動三個 Thread 執行緒
         t1 = threading.Thread(target=selection_sort, args=(self.data_selection, self.get_callback(self.canvas_sel, self.lbl_sel)))
         t2 = threading.Thread(target=insertion_sort, args=(self.data_insertion, self.get_callback(self.canvas_ins, self.lbl_ins)))
         t3 = threading.Thread(target=quick_sort_wrapper, args=(self.data_quick, self.get_callback(self.canvas_qck, self.lbl_qck)))
+        
+        t1.setDaemon(True) # 設定為守護執行緒，防止主視窗卡死
+        t2.setDaemon(True)
+        t3.setDaemon(True)
         
         t1.start()
         t2.start()
@@ -186,5 +176,17 @@ class SortingVisualizer:
         start_time = time.time()
         def callback(arr, current=-1, target=-1, sorted_up_to=-1, done=False):
             elapsed = time.time() - start_time
-            # 使用 root.after 確保安全在 Tkinter 主執行緒更新畫面
             self.root.after(0, lambda: self.update_ui(canvas, label, arr, current, target, sorted_up_to, elapsed, done))
+        return callback
+
+    def update_ui(self, canvas, label, arr, current, target, sorted_up_to, elapsed, done):
+        self.draw_data(canvas, arr, current, target, sorted_up_to, done)
+        label.config(text=f"執行時間: {elapsed:.3f} 秒")
+
+# ==========================================
+# 確保視窗主循環常駐的主程式進入點
+# ==========================================
+if __name__ == "__main__":
+    root = tk.Tk()
+    app = SortingVisualizer(root, data_size=50)
+    root.mainloop()
