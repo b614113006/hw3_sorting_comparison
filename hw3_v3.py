@@ -59,13 +59,9 @@ def quick_sort_recursive(data_list, start, end, total_len, progress_dict):
             data_list[left], data_list[right] = data_list[right], data_list[left]
     data_list[pivot], data_list[right] = data_list[right], data_list[pivot]
     
-    # 計算當前的定位進度
+# 計算當前的定位進度，【修復】完全拿掉內部 time.sleep，徹底根除 98% 抖動與卡頓 Bug！
     current_sorted = total_len - (end - start)
     progress_dict['Quick'] = min(99.0, (current_sorted / total_len) * 100)
-    
-    # 引入與其他演算法完全相同的 0.01 秒延遲基準
-    # 因為 Quick Sort 的分治法步驟極少，即便加上 0.01 秒，它依然會瞬間充滿，展現強大效能！
-    time.sleep(0.01)
     
     quick_sort_recursive(data_list, start, right - 1, total_len, progress_dict)
     quick_sort_recursive(data_list, right + 1, end, total_len, progress_dict)
@@ -75,7 +71,7 @@ def run_quick_sort(arr, progress_dict):
     data_list = list(arr)
     n = len(data_list)
     quick_sort_recursive(data_list, 0, n - 1, n, progress_dict)
-    progress_dict['Quick'] = 100.0  # 完成時確保拉回 100%
+    progress_dict['Quick'] = 100.0  # 排完瞬間滿格
 
 
 # ==========================================
