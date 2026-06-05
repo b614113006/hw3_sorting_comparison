@@ -1,52 +1,52 @@
 import random
-import threading
 import time
-import tkinter as tk
+import threading
+import sys
 
 # ==========================================
-# 1. 選擇排序法 (Selection Sort)
+# 1. 自訂排序演算法 (嚴格遵循投影片教學邏輯)
 # ==========================================
-def selection_sort(arr, viz_callback):
+
+def selection_sort(arr, progress_dict):
+    """
+    選擇排序法：反覆從未排序數列中找最小值，與左邊數字交換 (O(n²))
+    """
     n = len(arr)
+    # 複製一份避免影響其他執行緒
+    data = list(arr) 
+    
     for i in range(n):
-        smallest_idx = i
+        min_idx = i
         for j in range(i + 1, n):
-            if arr[j] < arr[smallest_idx]:
-                smallest_idx = j
-            # 紅色代表目前掃描到的柱子，黃色代表目前認定的最小值柱子
-            viz_callback(arr, current=j, target=smallest_idx, sorted_up_to=i)
-            time.sleep(0.01)
-        arr[i], arr[smallest_idx] = arr[smallest_idx], arr[i]
-        viz_callback(arr, current=i, target=smallest_idx, sorted_up_to=i+1)
-        time.sleep(0.01)
-    viz_callback(arr, done=True)
+            if data[j] < data[min_idx]:
+                min_idx = j
+        # 交換數值
+        data[i], data[min_idx] = data[min_idx], data[i]
+        
+        # 更新進度百分比
+        progress_dict['Selection'] = int(((i + 1) / n) * 100)
+        time.sleep(0.005)  # 稍微延遲以便在終端機觀察動畫效果
 
-# ==========================================
-# 2. 插入排序法 (Insertion Sort) - 補上老師要求取代 Bubble 的演算法
-# ==========================================
-def insertion_sort(arr, viz_callback):
+def bubble_sort(arr, progress_dict):
+    """
+    泡泡排序法：逐一比較相鄰元素，將最大者往後「擠」 (O(n²))
+    """
     n = len(arr)
-    for i in range(1, n):
-        key = arr[i]
-        j = i - 1
-        while j >= 0 and arr[j] > key:
-            arr[j + 1] = arr[j]
-            j -= 1
-            viz_callback(arr, current=j, target=i, sorted_up_to=i)
-            time.sleep(0.01)
-        arr[j + 1] = key
-        viz_callback(arr, current=j+1, target=i, sorted_up_to=i+1)
-        time.sleep(0.01)
-    viz_callback(arr, done=True)
+    data = list(arr)
+    
+    for i in range(n, 1, -1):
+        for j in range(0, i - 1):
+            if data[j] > data[j + 1]:
+                data[j], data[j + 1] = data[j + 1], data[j]
+        
+        # 更新進度百分比 (投影片邏輯：做完一輪擠出一個最大值)
+        progress_dict['Bubble'] = int(((n - i + 1) / (n - 1)) * 100)
+        time.sleep(0.005)
 
-# ==========================================
-# 3. 快速排序法 (Quick Sort) - 嚴格對齊簡報雙指標法
-# ==========================================
-def quick_sort_wrapper(arr, viz_callback):
-    _quick_sort(arr, 0, len(arr) - 1, viz_callback)
-    viz_callback(arr, done=True)
-
-def _quick_sort(arr, start, end, viz_callback):
+def quick_sort_recursive(arr, start, end, total_len, progress_dict):
+    """
+    快速排序法核心遞迴：雙指標朝中間移動、交換、切分左右子陣列 (投影片第12頁虛擬碼邏輯)
+    """
     if start >= end:
         return
         
@@ -54,147 +54,134 @@ def _quick_sort(arr, start, end, viz_callback):
     left = start
     right = end
     
-    while left < right:
-        while left < right and arr[right] >= arr[pivot]:
+    while left != right:
+        # 右指標往左移動，直到找到比基準點小的數值
+        while data_qs[right] >= data_qs[pivot] and left < right:
             right -= 1
-            viz_callback(arr, current=right, target=pivot)
-            time.sleep(0.005) # Quick sort 本身極快，稍微給一點微小時間讓動畫流暢
-            
-        while left < right and arr[left] <= arr[pivot]:
+        # 左指標往右移動，直到找到比基準點大的數值
+        while data_qs[left] <= data_qs[pivot] and left < right:
             left += 1
-            viz_callback(arr, current=left, target=pivot)
-            time.sleep(0.005)
             
         if left < right:
-            arr[left], arr[right] = arr[right], arr[left]
-            viz_callback(arr, current=left, target=right)
-            time.sleep(0.005)
+            data_qs[left], data_qs[right] = data_qs[right], data_qs[left]
             
-    arr[pivot], arr[right] = arr[right], arr[pivot]
-    viz_callback(arr, current=right, target=pivot)
-    time.sleep(0.005)
+    # 左右指標相撞，交換基準點與相撞處數值
+    data_qs[pivot], data_qs[right] = data_qs[right], data_qs[pivot]
     
-    _quick_sort(arr, start, right - 1, viz_callback)
-    _quick_sort(arr, right + 1, end, viz_callback)
+    # 估算 Quick Sort 的進度 (以已定位的 pivot 數量或切分深度模擬)
+    # 為了讓進度條平滑，這裡依據切分範圍比例動態更新
+    current_sorted = total_len - (end - start)
+    progress_dict['Quick'] = min(99, int((current_sorted / total_len) * 100))
+    
+    # 遞迴跑左右子陣列
+    quick_sort_recursive(arr, start, right - 1, total_len, progress_dict)
+    quick_sort_recursive(arr, right + 1, end, total_len, progress_dict)
 
+def run_quick_sort(arr, progress_dict):
+    """
+    快速排序法執行緒入口
+    """
+    global data_qs
+    data_qs = list(arr)
+    n = len(data_qs)
+    quick_sort_recursive(data_qs, 0, n - 1, n, progress_dict)
+    progress_dict['Quick'] = 100
 
 # ==========================================
-# Tkinter GUI 視覺化介面 (完美對齊老師範例影片)
+# 2. 執行緒管理與終端機視覺化 (TUI)
 # ==========================================
-class SortingVisualizer:
-    def __init__(self, root, data_size=50):
-        self.root = root
-        self.root.title("演算法效能比較 (Selection vs Insertion vs Quick)")
-        self.root.configure(bg="#f0f0f0")
-        
-        self.data_size = data_size
-        # 產生包含 N 個隨機不重複數字
-        self.original_data = list(range(5, 5 + data_size * 5, 5))
-        random.shuffle(self.original_data)
-        
-        # 複製三份給不同的演算法
-        self.data_selection = list(self.original_data)
-        self.data_insertion = list(self.original_data)
-        self.data_quick = list(self.original_data)
-        
-        # 配合影片，讓畫布變寬、變高，長條圖更精細
-        self.canvas_width = 300
-        self.canvas_height = 250
-        
-        # 建立上方大標題
-        main_title = tk.Label(root, text="Sorting Algorithms Performance Comparison", font=("Helvetica", 14, "bold"), bg="#f0f0f0")
-        main_title.pack(pady=10)
-        
-        # 橫向排列的三個區域容器
-        self.display_frame = tk.Frame(root, bg="#f0f0f0")
-        self.display_frame.pack(padx=20)
-        
-        self.create_canvas_section("Selection Sort", 0)
-        self.create_canvas_section("Insertion Sort", 1)
-        self.create_canvas_section("Quick Sort (雙指標)", 2)
-        
-        # 控制按鈕區域
-        self.btn_start = tk.Button(root, text="► 開始同步排序 (Multi-threading)", command=self.start_sorting, 
-                                  font=("Microsoft JhengHei", 11, "bold"), bg="#2cf", fg="white", activebackground="#09c")
-        self.btn_start.pack(pady=15)
 
-    def create_canvas_section(self, title, col):
-        frame = tk.LabelFrame(self.display_frame, text=title, font=("Microsoft JhengHei", 10, "bold"), bg="white", padx=5, pady=5)
-        frame.pack(side=tk.LEFT, padx=10)
-        
-        # 建立柱狀圖畫布
-        canvas = tk.Canvas(frame, width=self.canvas_width, height=self.canvas_height, bg="#1e1e1e", highlightthickness=0)
-        canvas.pack()
-        
-        time_label = tk.Label(frame, text="執行時間: 0.000 秒", font=("Microsoft JhengHei", 10), bg="white", fg="#555")
-        time_label.pack(pady=5)
-        
-        if col == 0:
-            self.canvas_sel, self.lbl_sel = canvas, time_label
-            self.draw_data(self.canvas_sel, self.data_selection)
-        elif col == 1:
-            self.canvas_ins, self.lbl_ins = canvas, time_label
-            self.draw_data(self.canvas_ins, self.data_insertion)
-        elif col == 2:
-            self.canvas_qck, self.lbl_qck = canvas, time_label
-            self.draw_data(self.canvas_qck, self.data_quick)
+def draw_progress_bar(label, percentage, color_code):
+    """
+    在終端機繪製精美的進度條
+    """
+    bar_length = 30
+    filled_length = int(round(bar_length * percentage / 100))
+    bar = '█' * filled_length + '░' * (bar_length - filled_length)
+    # 使用 ANSI 顏色編碼美化介面
+    return f"{label:<10} [\033[{color_code}m{bar}\033[0m] {percentage:>3}%"
 
-    def draw_data(self, canvas, arr, current=-1, target=-1, sorted_up_to=-1, done=False):
-        canvas.delete("all")
+def main():
+    print("=" * 50)
+    print("     Sorting Algorithms Efficiency Comparison     ")
+    print("=" * 50)
+    
+    # 讓使用者自訂隨機不重複數字的數量 N
+    try:
+        N = int(input("請輸入要測試的隨機不重複數字數量 N (建議 100-300): "))
+    except ValueError:
+        print("輸入錯誤，預設為 200")
+        N = 200
         
-        # 計算每根柱子的寬度與間距
-        padding = 1
-        bar_width = (self.canvas_width / self.data_size) - padding
-        max_val = max(self.original_data)
-        
-        for i, val in enumerate(arr):
-            # 計算柱子高度，頂部留白
-            bar_height = (val / max_val) * (self.canvas_height - 30)
-            x0 = i * (bar_width + padding) + padding
-            y0 = self.canvas_height - bar_height
-            x1 = x0 + bar_width
-            y1 = self.canvas_height
-            
-            # 完美的動態色彩配置
-            if done:
-                color = "#2ecc71" # 排序全部完成：亮綠色
-            elif i == current:
-                color = "#e74c3c" # 當前活動/比對指標：紅色
-            elif i == target:
-                color = "#f1c40f" # 目標/基準/最小值位置：黃色
-            elif sorted_up_to != -1 and i < sorted_up_to:
-                color = "#27ae60" # 局部已排序區域：深綠色
-            else:
-                color = "#3498db" # 未排序區域：天空藍
-                
-            canvas.create_rectangle(x0, y0, x1, y1, fill=color, outline="")
+    print(f"\n正在產出 {N} 個隨機不重複數字...")
+    # 模擬隨機不重覆數字，不使用系統排序函式
+    base_list = list(range(1, N + 1))
+    random.shuffle(base_list)
+    print("資料準備就緒，準備啟動三個獨立 Thread 同步執行！")
+    input("按 Enter 鍵開始模擬...")
 
-    def start_sorting(self):
-        self.btn_start.config(state=tk.DISABLED, bg="#ccc")
-        
-        # 啟動 Threads
-        t1 = threading.Thread(target=selection_sort, args=(self.data_selection, self.get_callback(self.canvas_sel, self.lbl_sel)))
-        t2 = threading.Thread(target=insertion_sort, args=(self.data_insertion, self.get_callback(self.canvas_ins, self.lbl_ins)))
-        t3 = threading.Thread(target=quick_sort_wrapper, args=(self.data_quick, self.get_callback(self.canvas_qck, self.lbl_qck)))
-        
-        t1.start()
-        t2.start()
-        t3.start()
-
-    def get_callback(self, canvas, label):
+    # 記錄各演算法進度與執行時間
+    progress = {'Selection': 0, 'Bubble': 0, 'Quick': 0}
+    runtimes = {'Selection': 0.0, 'Bubble': 0.0, 'Quick': 0.0}
+    
+    # 定義執行緒包裝函式，以便精準紀錄時間
+    def thread_wrapper(sort_func, label):
         start_time = time.time()
-        def callback(arr, current=-1, target=-1, sorted_up_to=-1, done=False):
-            elapsed = time.time() - start_time
-            # 確保介面更新順暢安全
-            self.root.after(0, lambda: self.update_ui(canvas, label, arr, current, target, sorted_up_to, elapsed, done))
-        return callback
+        if label == 'Quick':
+            sort_func(base_list, progress)
+        else:
+            sort_func(base_list, progress)
+        runtimes[label] = time.time() - start_time
+        progress[label] = 100  # 確保結束時必定為 100%
 
-    def update_ui(self, canvas, label, arr, current, target, sorted_up_to, elapsed, done):
-        self.draw_data(canvas, arr, current, target, sorted_up_to, done)
-        label.config(text=f"執行時間: {elapsed:.3f} 秒")
+    # 建立 3 個獨立的 Thread
+    t1 = threading.Thread(target=thread_wrapper, args=(selection_sort, 'Selection'))
+    t2 = threading.Thread(target=thread_wrapper, args=(bubble_sort, 'Bubble'))
+    t3 = threading.Thread(target=thread_wrapper, args=(run_quick_sort, 'Quick'))
 
-if __name__ == "__main__":
-    window = tk.Tk()
-    # 資料量設為 50，柱狀圖的密集度與影片最為接近且好看
-    app = SortingVisualizer(window, data_size=50)
-    window.mainloop()
+    # 啟動所有執行緒 (同步進行)
+    t1.start()
+    t2.start()
+    t3.start()
+
+    # 終端機動態更新視覺化畫面
+    sys.stdout.write("\033[?25l")  # 隱藏終端機游標
+    try:
+        while t1.is_alive() or t2.is_alive() or t3.is_alive():
+            # 回到畫面最上方重新繪製 (實現動畫效果)
+            sys.stdout.write("\r" + " " * 60 + "\n" * 4) 
+            sys.stdout.write("\033[4A") 
+            
+            sys.stdout.write(draw_progress_bar("Selection", progress['Selection'], "32") + "\n") # 綠色
+            sys.stdout.write(draw_progress_bar("Bubble", progress['Bubble'], "33") + "\n")    # 黃色
+            sys.stdout.write(draw_progress_bar("Quick", progress['Quick'], "36") + "\n")     # 青色
+            sys.stdout.flush()
+            time.sleep(0.05)
+            
+        # 最終確保所有人都顯示 100%
+        sys.stdout.write("\033[3A")
+        sys.stdout.write(draw_progress_bar("Selection", 100, "32") + "\n")
+        sys.stdout.write(draw_progress_bar("Bubble", 100, "33") + "\n")
+        sys.stdout.write(draw_progress_bar("Quick", 100, "36") + "\n")
+        sys.stdout.flush()
+        
+    finally:
+        sys.stdout.write("\033[?25h")  # 恢復終端機游標
+
+    # 等待所有執行緒安全結束
+    t1.join()
+    t2.join()
+    t3.join()
+
+    # 印出最終效能統計結果
+    print("\n" + "=" * 50)
+    print("                 Total Runtime (seconds)         ")
+    print("=" * 50)
+    print(f"Selection Sort : {runtimes['Selection']:.6f} s")
+    print(f"Bubble Sort    : {runtimes['Bubble']:.6f} s")
+    print(f"Quick Sort     : {runtimes['Quick']:.6f} s")
+    print("=" * 50)
+    print("模擬完成！請將此結果錄製為動態 GIF 並上傳至 GitHub 繳交。")
+
+if __name__ == '__main__':
+    main()
