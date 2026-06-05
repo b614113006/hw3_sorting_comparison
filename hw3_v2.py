@@ -5,7 +5,7 @@ import tkinter as tk
 from tkinter import ttk
 
 # ==========================================
-# 1. 自訂排序演算法 (核心重點：精準鎖定 Selection, Bubble, Quick)
+# 1. 排序演算法
 # ==========================================
 
 def selection_sort(arr, progress_dict):
@@ -42,7 +42,7 @@ def bubble_sort(arr, progress_dict):
 
 def quick_sort_recursive(data_list, start, end, total_len, progress_dict):
     """
-    快速排序法核心遞迴：雙指標朝中間移動（嚴格遵循投影片第12頁虛擬碼邏輯）
+    快速排序法核心遞迴：雙指標朝中間移動
     """
     if start >= end:
         return
@@ -73,13 +73,13 @@ def run_quick_sort(arr, progress_dict):
     progress_dict['Quick'] = 100.0  # 完成時瞬間充滿
 
 # ==========================================
-# 2. 全域視窗與現代化視覺化 (不拆分類別，最穩健的循序架構)
+# 2. 全域視窗與視覺化
 # ==========================================
 
 root = tk.Tk()
 root.title("Sorting Algorithm Efficiency Comparison (Threaded)")
 root.geometry("640x480")
-root.configure(bg='#e9ebe0')  # 質感米灰色背景
+root.configure(bg='#e9ebe0')
 root.resizable(False, False)
 
 # 共享即時資料結構
@@ -87,7 +87,7 @@ progress = {'Selection': 0.0, 'Bubble': 0.0, 'Quick': 0.0}
 runtimes = {'Selection': 0.0, 'Bubble': 0.0, 'Quick': 0.0}
 status_vars = {"is_running": False}
 
-# 設置 ttk 元件外觀風格 (圓角與青藍色質感)
+# 設置 ttk 元件外觀風格
 style = ttk.Style()
 style.theme_use('clam')
 style.configure("Teal.Horizontal.TProgressbar", troughcolor='#cccccc', background='#218c9f', thickness=22, borderwidth=0)
@@ -96,7 +96,7 @@ style.configure("Teal.Horizontal.TProgressbar", troughcolor='#cccccc', backgroun
 title_label = tk.Label(root, text="Sorting Algorithms Efficiency", font=('Segoe UI', 18), bg='#e9ebe0', fg='#202020')
 title_label.pack(pady=(25, 15))
 
-# 主面板框架 (排版全部靠左垂直對齊，絕不遮擋字體)
+# 主面板框架
 main_frame = tk.Frame(root, bg='#e9ebe0')
 main_frame.pack(fill=tk.X, padx=40)
 
@@ -146,7 +146,7 @@ for text_label, key in time_items:
     time_labels[key] = val_lbl
 
 def thread_handler(sort_func, algo_label, data_list):
-    """包裝執行緒，精準記錄執行總耗時"""
+    """包裝執行緒，記錄執行總耗時"""
     start_time = time.time()
     sort_func(data_list, progress)
     runtimes[algo_label] = time.time() - start_time
@@ -167,7 +167,7 @@ def start_simulations():
     test_data = list(range(1, 201))
     random.shuffle(test_data)
     
-    # 【完美修正】三個執行緒獨立宣告，杜絕任何背景死鎖閃退
+    # 三個執行緒獨立宣告
     t1 = threading.Thread(target=thread_handler, args=(selection_sort, 'Selection', test_data), daemon=True)
     t2 = threading.Thread(target=thread_handler, args=(bubble_sort, 'Bubble', test_data), daemon=True)
     t3 = threading.Thread(target=thread_handler, args=(run_quick_sort, 'Quick', test_data), daemon=True)
@@ -193,7 +193,7 @@ def refresh_window():
         
     root.after(20, refresh_window)
 
-# 底部功能按鈕框架與排版 (完美對齊圖二)
+# 底部功能按鈕框架與排版
 btn_frame = tk.Frame(root, bg='#e9ebe0')
 btn_frame.pack(fill=tk.X, padx=40, pady=(30, 0))
 
