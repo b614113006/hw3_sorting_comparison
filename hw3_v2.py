@@ -5,7 +5,7 @@ import tkinter as tk
 from tkinter import ttk
 
 # ==========================================
-# 1. 自訂排序演算法 (核心重點：嚴格遵循投影片與作業規範)
+# 1. 自訂排序演算法 (核心重點：精準鎖定 Selection, Bubble, Quick)
 # ==========================================
 
 def selection_sort(arr, progress_dict):
@@ -21,26 +21,23 @@ def selection_sort(arr, progress_dict):
                 min_idx = j
         data_list[i], data_list[min_idx] = data_list[min_idx], data_list[i]
         
-        # 保持適當延遲以供動態視覺化觀察
+        # 即時更新 Selection Sort 進度並保持可觀察的延遲
         progress_dict['Selection'] = ((i + 1) / n) * 100
         time.sleep(0.01)
 
-def insertion_sort(arr, progress_dict):
+def bubble_sort(arr, progress_dict):
     """
-    插入排序法：將未排序元素逐一插入到左邊已排序數列的正確位置 (O(n²))
+    泡泡排序法：逐一比較相鄰元素，將最大者往後「擠」 (O(n²))
     """
     n = len(arr)
     data_list = list(arr)
-    for i in range(1, n):
-        key_val = data_list[i]
-        j = i - 1
-        while j >= 0 and data_list[j] > key_val:
-            data_list[j + 1] = data_list[j]
-            j -= 1
-        data_list[j + 1] = key_val
+    for i in range(n, 1, -1):
+        for j in range(0, i - 1):
+            if data_list[j] > data_list[j + 1]:
+                data_list[j], data_list[j + 1] = data_list[j + 1], data_list[j]
         
-        # 保持適當延遲以供動態視覺化觀察
-        progress_dict['Insertion'] = (i / (n - 1)) * 100
+        # 即時更新 Bubble Sort 進度 (每做完一輪擠出一個最大值)
+        progress_dict['Bubble'] = ((n - i + 1) / (n - 1)) * 100
         time.sleep(0.01)
 
 def quick_sort_recursive(data_list, start, end, total_len, progress_dict):
@@ -61,7 +58,7 @@ def quick_sort_recursive(data_list, start, end, total_len, progress_dict):
             data_list[left], data_list[right] = data_list[right], data_list[left]
     data_list[pivot], data_list[right] = data_list[right], data_list[pivot]
     
-    # 【完美同步老師速度】移除所有 sleep，僅在遞迴切分時即時記錄內部定位進度
+    # 保持 $O(n \log n)$ 速度封印解除狀態，無 sleep 延遲
     current_sorted = total_len - (end - start)
     progress_dict['Quick'] = min(99.0, (current_sorted / total_len) * 100)
     
@@ -73,138 +70,41 @@ def run_quick_sort(arr, progress_dict):
     data_list = list(arr)
     n = len(data_list)
     quick_sort_recursive(data_list, 0, n - 1, n, progress_dict)
-    progress_dict['Quick'] = 100.0  # 完成時瞬間拉回 100%
+    progress_dict['Quick'] = 100.0  # 完成時瞬間充滿
 
 # ==========================================
-# 2. 全域視窗與控制邏輯 (現代化米灰配青藍色樣式)
+# 2. 全域視窗與現代化視覺化 (Tkinter 與 圓角樣式)
 # ==========================================
 
 root = tk.Tk()
 root.title("Sorting Algorithm Efficiency Comparison (Threaded)")
 root.geometry("640x480")
-root.configure(bg='#e9ebe0')  # 圖二質感米灰色背景
+root.configure(bg='#e9ebe0')  # 柔和現代感米灰色背景
 root.resizable(False, False)
 
-# 即時數據共享結構
-progress = {'Selection': 0.0, 'Insertion': 0.0, 'Quick': 0.0}
-runtimes = {'Selection': 0.0, 'Insertion': 0.0, 'Quick': 0.0}
+# 共享即時資料結構
+progress = {'Selection': 0.0, 'Bubble': 0.0, 'Quick': 0.0}
+runtimes = {'Selection': 0.0, 'Bubble': 0.0, 'Quick': 0.0}
 status_vars = {"is_running": False}
 
-# 設置現代化進度條元件樣式設定
+# 設置 ttk 元件外觀風格 (質感青藍色)
 style = ttk.Style()
 style.theme_use('clam')
 style.configure("Teal.Horizontal.TProgressbar", troughcolor='#cccccc', background='#218c9f', thickness=22, borderwidth=0)
 
-# 頂部標題
+# 頂部大標題
 title_label = tk.Label(root, text="Sorting Algorithms Efficiency", font=('Segoe UI', 18), bg='#e9ebe0', fg='#202020')
 title_label.pack(pady=(25, 15))
 
-# 主面板框架
+# 主面板框架 (排版全部靠左垂直對齊)
 main_frame = tk.Frame(root, bg='#e9ebe0')
 main_frame.pack(fill=tk.X, padx=40)
 
-# 建立畫布元件
-algos = [('Selection Sort', 'Selection'), ('Insertion Sort', 'Insertion'), ('Quick Sort', 'Quick')]
+# 建立進度條元件
+algos = [('Selection Sort', 'Selection'), ('Bubble Sort', 'Bubble'), ('Quick Sort', 'Quick')]
 bars = {}
 percent_labels = {}
 
 for name, key in algos:
     row = tk.Frame(main_frame, bg='#e9ebe0')
     row.pack(fill=tk.X, pady=6)
-    
-    lbl = tk.Label(row, text=name, font=('Segoe UI', 12), bg='#e9ebe0', fg='#333333', width=14, anchor='w')
-    lbl.pack(side=tk.LEFT)
-    
-    bar_frame = tk.Frame(row, bg='#e9ebe0')
-    bar_frame.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 10))
-    
-    bar = ttk.Progressbar(bar_frame, style="Teal.Horizontal.TProgressbar", orient="horizontal", mode="determinate", length=280)
-    bar.pack(fill=tk.X)
-    bars[key] = bar
-    
-    pct_lbl = tk.Label(row, text="0%", font=('Segoe UI', 11, 'bold'), bg='#e9ebe0', fg='#333333', width=5, anchor='e')
-    pct_lbl.pack(side=tk.LEFT)
-    percent_labels[key] = pct_lbl
-
-# 狀態標籤 (Ready / Running...)
-status_label = tk.Label(root, text="Ready", font=('Segoe UI', 12), bg='#e9ebe0', fg='#444444')
-status_label.pack(anchor='w', padx=40, pady=(15, 10))
-
-# 底部統計面板大標題
-time_heading = tk.Label(root, text="Total runtime (seconds):", font=('Segoe UI', 12, 'bold'), bg='#e9ebe0', fg='#202020')
-time_heading.pack(anchor='w', padx=40, pady=(5, 5))
-
-time_labels = {}
-time_items = [('Selection Sort:', 'Selection'), ('Insertion Sort:', 'Insertion'), ('Quick Sort:', 'Quick')]
-
-for text_label, key in time_items:
-    t_row = tk.Frame(root, bg='#e9ebe0')
-    t_row.pack(fill=tk.X, padx=40, pady=2)
-    
-    name_lbl = tk.Label(t_row, text=text_label, font=('Segoe UI', 11), bg='#e9ebe0', fg='#444444', width=14, anchor='w')
-    name_lbl.pack(side=tk.LEFT)
-    
-    val_lbl = tk.Label(t_row, text="-", font=('Consolas', 11), bg='#e9ebe0', fg='#444444', width=15, anchor='w')
-    val_lbl.pack(side=tk.LEFT, padx=20)
-    time_labels[key] = val_lbl
-
-def thread_handler(sort_func, algo_label, data_list):
-    start_time = time.time()
-    sort_func(data_list, progress)
-    runtimes[algo_label] = time.time() - start_time
-    progress[algo_label] = 100.0
-
-def start_simulations():
-    if status_vars["is_running"]:
-        return
-    status_vars["is_running"] = True
-    start_btn.config(state=tk.DISABLED, bg='#cccccc')
-    status_label.config(text="Running...")
-    
-    for key in progress:
-        progress[key] = 0.0
-        time_labels[key].config(text="-")
-        
-    test_data = list(range(1, 201))
-    random.shuffle(test_data)
-    
-    # 三執行緒同步併發跑排序
-    t1 = threading.Thread(target=thread_handler, args=(selection_sort, 'Selection', test_data), daemon=True)
-    t2 = threading.Thread(target=thread_handler, args=(insertion_sort, 'Insertion', test_data), daemon=True)
-    t3 = threading.Thread(target=thread_handler, args=(run_quick_sort, 'Quick', test_data), daemon=True)
-    
-    t1.start()
-    t2.start()
-    t3.start()
-
-def refresh_window():
-    """定時主循環：每 20 毫秒刷新一次 UI"""
-    for key, bar in bars.items():
-        pct = progress[key]
-        bar['value'] = pct
-        percent_labels[key].config(text=f"{int(pct)}%")
-        
-        if pct == 100.0 and time_labels[key]['text'] == "-":
-            time_labels[key].config(text=f"{runtimes[key]:.6f} s")
-            
-    if status_vars["is_running"] and all(pct == 100.0 for pct in progress.values()):
-        status_vars["is_running"] = False
-        status_label.config(text="Ready")
-        start_btn.config(state=tk.NORMAL, bg='#1d639b')
-        
-    root.after(20, refresh_window)
-
-# 底部功能按鈕列排版
-btn_frame = tk.Frame(root, bg='#e9ebe0')
-btn_frame.pack(fill=tk.X, padx=40, pady=(30, 0))
-
-start_btn = tk.Button(btn_frame, text="Start Simulations (▶)", command=start_simulations, font=('Segoe UI', 11, 'bold'), bg='#1d639b', fg='white', activebackground='#257cb3', activeforeground='white', bd=0, padx=15, pady=6, cursor='hand2')
-start_btn.pack(side=tk.LEFT)
-
-quit_btn = tk.Button(btn_frame, text="Quit", command=root.destroy, font=('Segoe UI', 11), bg='#a0a0a0', fg='white', activebackground='#b5b5b5', activeforeground='white', bd=0, padx=20, pady=6, cursor='hand2')
-quit_btn.pack(side=tk.RIGHT)
-
-# 啟動事件守護機制
-refresh_window()
-root.update()
-root.mainloop()
